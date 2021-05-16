@@ -9,9 +9,7 @@ class ContextEOD:
     """
     Context object used in Simulation. 
 
-    Has two functions. To iterate over the historical 
-    dataset for backtesting, and to be an observable so
-    that assets can update their price.
+    Used to iterate over a historical dataset.
     """
 
     class TimeInMarketDay(Enum):
@@ -30,18 +28,6 @@ class ContextEOD:
         T, _ = data_source.shape
         self._max_date_index = T-1
         self._observers: Dict[str, Callable] = dict()
-
-    def add_observer(self, id, callback: Callable):
-        if id in self._observers.keys():
-            return
-        else:
-            self._observers[id] = callback
-
-    def remove_observer(self, id):
-        if id in self._observers.keys():
-            del self._observers[id]
-        else:
-            return
 
     def can_still_update(self):
         """
@@ -70,12 +56,6 @@ class ContextEOD:
             self._time_in_market_day = ContextEOD.TimeInMarketDay.Opening
             self._current_date_index = self._current_date_index + 1
         
-        self.notify_observers()
-
-    def notify_observers(self):
-        for id in self._observers.keys():
-            self._observers[id]()
-
     def time_in_market_day(self):
         return self._time_in_market_day
 
