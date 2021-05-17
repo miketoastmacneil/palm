@@ -4,8 +4,9 @@ import pprint
 from typing import Callable, Dict
 
 from ..data.equity_eod import EquityEOD
+from .context_observable import ContextObservable
 
-class ContextEOD:
+class ContextEOD(ContextObservable):
     """
     Context object used in Simulation. 
 
@@ -17,6 +18,7 @@ class ContextEOD:
         Closing = 2 
 
     def __init__(self, data_source: EquityEOD):
+        super(ContextEOD, self).__init__()
         self._data_source        = data_source
         self._current_date_index = 0
         self._time_in_market_day = ContextEOD.TimeInMarketDay.Opening
@@ -55,7 +57,9 @@ class ContextEOD:
         else:
             self._time_in_market_day = ContextEOD.TimeInMarketDay.Opening
             self._current_date_index = self._current_date_index + 1
-        
+
+        self.notify_observers()
+
     def time_in_market_day(self):
         return self._time_in_market_day
 

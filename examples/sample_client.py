@@ -33,6 +33,8 @@ while context.can_still_update():
         continue
 
     current_time = context.time_in_market_day()
+
+    ## Only make trades at closing.
     if current_time == ContextEOD.TimeInMarketDay.Opening:
         continue
     

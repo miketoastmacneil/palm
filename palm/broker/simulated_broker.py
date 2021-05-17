@@ -1,4 +1,6 @@
 
+from ..trades.trade import Trade
+from ..utils.generate_id import generate_hex_id
 from ..positions.position import Position
 from ..positions.long_position import LongPosition
 from ..positions.short_position import ShortPosition
@@ -13,15 +15,17 @@ class SimulatedBroker:
         self._cash_account = CashAccount(initial_deposit)
         self._margin = margin
         self._positions_map = dict()
-        self._orders_map = dict()
+        self._orders = set()
+        self._id = generate_hex_id()
 
-        ## Need a context to pass to positions
         self._context = context
+        self._context.add_observer(self._id, self.on_context_update)
+        self._trades = []
 
     def submit_order(self, order: MarketOrder):
 
         order.set_as_submitted(self._context.current_time())
-        self._orders_map[order.id] = order
+        self._orders.add(order)
         self._process_order_at_current_price(order)
         
         return
@@ -75,13 +79,15 @@ class SimulatedBroker:
 
         position = self.get_position(symbol)
 
-        if position.side == Position.Side.SHORT:
-            cost = self._context.current_market_price(position.symbol)*position.quantity
-            self._cash_account.withdraw(cost)
-        if position.side == Position.Side.LONG:
-            credit = self._context.current_market_price(position.symbol)*position.quantity
-            self._cash_account.deposit(credit)
+        if position is None:
+            return
 
+        if position.side == Position.Side.LONG:
+            order = MarketOrder.Sell(symbol, position.quantity)
+        elif position.side == Position.Side.SHORT:
+            order = MarketOrder.Buy(symbol, abs(position.quantity))
+
+        self.submit_order(order)
         position.set_to_closed()
 
         return
@@ -90,7 +96,7 @@ class SimulatedBroker:
         return self._positions_map
 
     def get_orders(self):
-        return self._orders_map
+        return self._orders
 
     def get_cast_account(self):
         return self._cash_account
@@ -108,7 +114,18 @@ class SimulatedBroker:
         positions_value = 0.0
         for symbol in self._positions_map.keys():
             position = self._positions_map[symbol]
-            if position.status==Position.Status.OPEN:
+            if position.status==Position.Status.OPEN: 
                 positions_value += position.current_dollar_value
     
         return cash_value+positions_value
+
+    def on_context_update(self):
+
+        for trade in self._trades:
+            if (trade.status == Trade.Status.ACTIVE) and (trade.exit_rule_triggered()):
+                trade.submit_exit_order(self)
+
+    def submit_trade(self, trade: Trade):
+
+        self._trades.append(trade)
+        trade.submit_entry_order(self)
