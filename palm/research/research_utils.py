@@ -25,27 +25,3 @@ def autocovariance(x: np.ndarray, k=0):
         A_k = 1/(T - 1) * np.dot(x_tilde.transpose(), x_tilde)
     return A_k
 
-
-def predictable_matrix(X: np.ndarray):
-    """
-    Gets the predictability matrix defined in d'aspremont and cuturi.
-    Reference: https://arxiv.org/pdf/1509.05954.pdf, section 2.2.3.
-    """
-
-    A_0 = autocovariance(X)
-    A_1 = autocovariance(X, 1)
-
-    U, D, V_t = np.linalg.svd(A_0)
-    U_T = np.transpose(U)
-    V = np.transpose(V_t)
-    D_inv = np.diag(1/np.maximum(D,1.0e-8))
-    A_0_inv = np.dot(V, np.dot(D_inv, U_T))
-    sqrt_A_0_inv = np.dot(V, np.dot(np.sqrt(D_inv), U_T))
-
-    pred = sqrt_A_0_inv
-    pred = np.dot(np.transpose(A_1),pred)
-    pred = np.dot(A_0_inv, pred)
-    pred = np.dot(A_1, pred)
-    pred = np.dot(sqrt_A_0_inv, pred)
-    return pred
-

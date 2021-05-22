@@ -43,7 +43,7 @@ while context.can_still_update():
 
     order_quantity = dict()
     for i in range(len(returns_since_yesterday)):
-        amount_to_invest = (percent_returns[i] - median_return) * account.balance
+        amount_to_invest = -(percent_returns[i] - median_return) * account.balance
         order_quantity[symbol_list[i]] = round(amount_to_invest / context.current_market_price(symbol_list[i]))
 
     ## Exit at next closing    
@@ -55,3 +55,4 @@ while context.can_still_update():
     historical_portfolio_value.append(broker.portfolio_value())
 
 plt.plot(historical_portfolio_value)
+plt.show()
