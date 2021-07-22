@@ -6,25 +6,35 @@ from typing import Callable, Dict
 from ..data.equity_eod import EquityEOD
 from .context_observable import ContextObservable
 
+class TimeInMarketDay(Enum):
+    Opening = 1
+    Closing = 2 
+
+class EODEvent:
+
+    def __init__(self, date, time_in_market_day, date_index_since_start):
+
+        self.date = date
+        self.time_in_market_day = time_in_market_day
+        self.date_index_since_start = date_index_since_start
+
 class ContextEOD(ContextObservable):
     """
     Context object used in Simulation. 
 
-    Used to iterate over a historical dataset.
+    Used to iterate over a historical dataset which implements
+    the Equity EOD interface.
     """
 
-    class TimeInMarketDay(Enum):
-        Opening = 1
-        Closing = 2 
 
     def __init__(self, data_source: EquityEOD):
         super(ContextEOD, self).__init__()
         self._data_source        = data_source
         self._current_date_index = 0
-        self._time_in_market_day = ContextEOD.TimeInMarketDay.Opening
+        self._time_in_market_day = TimeInMarketDay.Opening
 
-        self._open  = self._data_source.open_prices_array()
-        self._close = self._data_source.close_prices_array() 
+        self._open  = self._data_source.open_prices()
+        self._close = self._data_source.close_prices() 
         self._dates = self._data_source.dates()
 
         T, _ = data_source.shape
@@ -36,7 +46,7 @@ class ContextEOD(ContextObservable):
         "end" of the iterator
         """
         at_the_last_day = self._current_date_index == self._max_date_index
-        at_closing_time = self._time_in_market_day == ContextEOD.TimeInMarketDay.Closing 
+        at_closing_time = self._time_in_market_day == TimeInMarketDay.Closing 
 
         its_closing_time_on_the_last_day = at_closing_time and at_the_last_day
 
@@ -44,6 +54,15 @@ class ContextEOD(ContextObservable):
             return False
         else:
             return True
+    
+    def __iter__(self):
+
+        while self.can_still_update():
+            self.update()
+            yield EODEvent(
+                    self._dates[self.current_date_index()],
+                    self._time_in_market_day,
+                    self.current_date_index())
 
     def update(self):
         """
@@ -52,10 +71,10 @@ class ContextEOD(ContextObservable):
         if not self.can_still_update():
             return
         
-        if self._time_in_market_day == ContextEOD.TimeInMarketDay.Opening:
-            self._time_in_market_day = ContextEOD.TimeInMarketDay.Closing
+        if self._time_in_market_day == TimeInMarketDay.Opening:
+            self._time_in_market_day = TimeInMarketDay.Closing
         else:
-            self._time_in_market_day = ContextEOD.TimeInMarketDay.Opening
+            self._time_in_market_day = TimeInMarketDay.Opening
             self._current_date_index = self._current_date_index + 1
 
         self.notify_observers()
@@ -69,7 +88,6 @@ class ContextEOD(ContextObservable):
     def current_date(self):
         return self._dates[self._current_date_index]
 
-
     ## TODO, this needs to give the right time
     def current_time(self):
         return self.current_date()
@@ -82,15 +100,15 @@ class ContextEOD(ContextObservable):
         """
         t = self._current_date_index
         i = self._data_source.symbol_to_column_index[symbol]
-        if self._time_in_market_day == ContextEOD.TimeInMarketDay.Opening:
+        if self._time_in_market_day == TimeInMarketDay.Opening:
             return self._open[t, i]
-        elif self._time_in_market_day == ContextEOD.TimeInMarketDay.Closing:
+        elif self._time_in_market_day == TimeInMarketDay.Closing:
             return self._close[t, i]
 
     def __repr__(self) -> str:
         pp = pprint.PrettyPrinter(indent = 4)
         state = {
-            "Time In Market Day": "Opening" if self._time_in_market_day==ContextEOD.TimeInMarketDay.Opening else "Closing",
+            "Time In Market Day": "Opening" if self._time_in_market_day==TimeInMarketDay.Opening else "Closing",
             "Current Time Index": self._current_date_index,
             "Current Date in Simulation": self.current_date().date()
         }

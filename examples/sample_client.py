@@ -1,51 +1,60 @@
 
 
 from datetime import datetime
-from palm.context.daily_bar_context import ContextEOD
+from palm.data.data_utils import pull_polygon_eod
+from palm.context.daily_bar_context import ContextEOD, TimeInMarketDay
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas_datareader as pdr
 
 import palm
-from palm.broker.simulated_broker import SimulatedBroker
-from palm.orders.market_order import MarketOrder
+from palm.trader.trader import SimulatedTrader
+from palm.trades.trade import Trade
 
 start_date = datetime(2019, 1, 1)
 end_date = datetime(2020, 10, 10)
 
 symbol_list = ['AAPL']
 
-data = pdr.data.DataReader(symbol_list, 'yahoo', start_date, end_date)
+data = pull_polygon_eod(symbol_list, start_date, end_date)
 
-context = palm.ContextFromYahooEOD(data) 
-broker = SimulatedBroker(context, initial_deposit= 10000)
-account = broker.get_cast_account()
+context = ContextEOD(data)
+trader = SimulatedTrader(context, initial_deposit= 10000)
 
-closing_prices = data["Close"].to_numpy()
+## Separating into an asset as well as exit rule
+## lets the exit rule grab the asset from local scope
+
+account = trader.broker.get_cast_account()
+
+closing_prices = data.close_prices()
 portfolio_value_history = []
 
-while context.can_still_update():
-    context.update()
-    current_date_index = context.current_date_index()
+is_open = lambda time_event: time_event.time_in_market_day==TimeInMarketDay.Opening
+less_than_30_days_data = lambda time_event: time_event.time_index_since_start < 15
 
-    ## Wait till we have 30 days of data.
-    if current_date_index <= 30:
+for time_event in context:
+    if is_open(time_event) or less_than_30_days_data(time_event):
         continue
 
-    current_time = context.time_in_market_day()
+    t = time_event.time_index_since_start
 
-    ## Only make trades at closing.
-    if current_time == ContextEOD.TimeInMarketDay.Opening:
-        continue
+    ## Ranges in numpy cut off the last one
+    previous_30_day_close = closing_prices[t-10:t+1]
+
+    aapl_current_price = context.current_market_price("AAPL")
+    aapl_previous_n_days = np.mean(previous_30_day_close)
+
+    ## Lambdas in python don't capture local scope.
+    def exit_rule():
+        stop_loss = 1.05*aapl_current_price 
+        context.current_market_price("AAPL") > stop_loss 
+        return context.current_date_index()==t+1
     
-    previous_30_day_close = closing_prices[current_date_index-30:current_date_index]
+    if (aapl_current_price > aapl_previous_n_days):
+        trader.submit_trade(Trade({"AAPL":-1}, exit_rule))
 
-    appl_current_price = context.current_market_price("AAPL")
-    appl_previous_n_days = np.mean(previous_30_day_close)
+    portfolio_value_history.append(trader.broker.portfolio_value())
 
-    if (appl_current_price < appl_previous_n_days) and (appl_current_price < account.balance):
-        broker.submit_order(MarketOrder.Buy("AAPL", quantity = 1))
-
-    portfolio_value_history.append(broker.portfolio_value())
-
-    
+plt.plot(portfolio_value_history)
+plt.show()

@@ -6,7 +6,12 @@ def returns_from_series(prices: np.ndarray):
     Takes a TxN price series and returns the percentage 
     returns 
     """
-    return (prices[1:,:] - prices[:-1,:])/prices[:-1,:]
+
+    if prices.ndim > 1:
+        return (prices[1:,:] - prices[:-1,:]) / prices[:-1,:]
+    else:
+        return (prices[1:] - prices[:-1]) / prices[:-1]
+
 
 def cumulative_returns(returns: np.ndarray):
     """

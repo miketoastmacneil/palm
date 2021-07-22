@@ -5,6 +5,9 @@ from typing import Callable, Dict
 
 from ..orders.market_order import MarketOrder
 
+## This should probably be trade executer.
+## TODO: Should a trade be responsible for submitting
+## its entry and exit order?
 class Trade:
 
     class Status(Enum):
@@ -12,7 +15,7 @@ class Trade:
         ACTIVE = 2
         COMPLETE = 3
 
-    def __init__(self, number_of_shares: Dict[str, int], exit_rule: Callable):
+    def __init__(self, number_of_shares: Dict[str, int], exit_rule: Callable = None):
         self._shares = number_of_shares
         self._exit_rule = exit_rule
         self._entry_orders = []
@@ -31,9 +34,9 @@ class Trade:
         for symbol in self._shares.keys():
             quantity = self._shares[symbol]
             if quantity < 0:
-                order = MarketOrder.Sell(symbol, quantity)
+                order = MarketOrder.Sell(symbol, abs(quantity))
             if quantity > 0:
-                order = MarketOrder.Buy(symbol, quantity)
+                order = MarketOrder.Buy(symbol, abs(quantity))
             if quantity == 0:
                 continue
 
@@ -51,9 +54,9 @@ class Trade:
             quantity = self._shares[symbol]
             order = None
             if quantity > 0:
-                order = MarketOrder.Sell(symbol, quantity)
+                order = MarketOrder.Sell(symbol, abs(quantity))
             if quantity < 0:
-                order = MarketOrder.Buy(symbol, quantity)
+                order = MarketOrder.Buy(symbol, abs(quantity))
             if quantity == 0:
                 continue
             
@@ -67,7 +70,10 @@ class Trade:
         return
 
     def exit_rule_triggered(self):
-        return self._exit_rule()
+        if self._exit_rule is None:
+            return False
+        else:
+            return self._exit_rule()
 
     def current_market_value(self):
 
@@ -84,7 +90,6 @@ class Trade:
         else:
             raise RuntimeError("Trade Status not recognized.")
 
-
     def profit_and_loss(self):
         if self.status == Trade.Status.INACTIVE:
             return 0.0 
@@ -99,6 +104,8 @@ class Trade:
         pp = pprint.PrettyPrinter(indent = 4)
         state = {
             "Status": self.status,
+            "Initial Value": self._inital_value,
+            "Exit Value": self._exit_value,
             "Profit and Loss": self.profit_and_loss(),
             "Assets": self._shares,
         }

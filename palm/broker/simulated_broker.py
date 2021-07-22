@@ -19,7 +19,6 @@ class SimulatedBroker:
         self._id = generate_hex_id()
 
         self._context = context
-        self._context.add_observer(self._id, self.on_context_update)
         self._trades = []
 
     def submit_order(self, order: MarketOrder):
@@ -81,7 +80,6 @@ class SimulatedBroker:
 
         if position is None:
             return
-
         if position.side == Position.Side.LONG:
             order = MarketOrder.Sell(symbol, position.quantity)
         elif position.side == Position.Side.SHORT:
@@ -118,14 +116,3 @@ class SimulatedBroker:
                 positions_value += position.current_dollar_value
     
         return cash_value+positions_value
-
-    def on_context_update(self):
-
-        for trade in self._trades:
-            if (trade.status == Trade.Status.ACTIVE) and (trade.exit_rule_triggered()):
-                trade.submit_exit_order(self)
-
-    def submit_trade(self, trade: Trade):
-
-        self._trades.append(trade)
-        trade.submit_entry_order(self)

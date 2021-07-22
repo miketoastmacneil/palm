@@ -1,66 +1,77 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 from tqdm import tqdm
+import os
 
 import numpy as np
+import pandas as pd
 
-import alpaca_trade_api as tradeapi 
+from polygon import RESTClient
+
 from ..asset.equity import PolygonEquity
+from .polygon_eod import PolygonEOD
 
+def pull_polygon_eod(symbols,
+                        start_date: datetime,
+                        end_date: datetime, 
+                        api_key = None, 
+                        show_progress: bool = True):
 
-def pull_alpaca_eod(equity_listings: list, start_date: datetime, 
-                    end_date: datetime, 
-                    show_progress: bool = True):
     """
-    Pulls equity listings from Alpaca trade api which are listed
-    in equity_listings.
+    Pulls EOD data from polygons API.
 
-    The dates pulled are for equities whose listing date is before the start date
-    and were last updated after the end_date. 
-
-    Example
-    --------
-    import datetime
-
-    small_cap_listings = read_listings_from_json(<filename>)
-    symbols, dict_of_OHLCV = pull_alpaca_eod(   
-                                datetime(2015,1,1), 
-                                datetime(2016,31,31)),
-                                small_cap_listings)
-
-    Parameters
+    Parameters:
     -----------
-    start_date: date_time object
-        - defaulted to (PST timezone).
-    end_date: date_time object
-        - defaulted to (PST timezone).
-    equity_listings: list[PolygonEquity]
-        - List of Polygon Equity objects.
-    show_progress: bool
-        - Defaults to true
+    symbols: List[str], list of symbols to get data on.
+    start_date: datetime, date from which to pull data.
+    end_date: datetime, date to which to pull data.
+    api_key: str, Polygon io api key, if none looks for
+        and environment variable named "POLYGON_IO_API_KEY", 
+        otherwise throws an error.
 
-    Returns
+    Returns:
     --------
-    dict_of_OHLCV: dictionary of Dataframes
-        - Set of dataframes.
+    eod_data: dict[DataFrame], dictionary of dataframes returned
+        from polygon REST request.
+    
+        The dictionary of dataframes is indexed by the symbols requested. The columns
+        of each dataframe follow the convention from the polygon
+        stock historical aggregates docs.
+        ('v', 'vw', 'o', 'c', 'h', 'l', 't', 'n') 
 
+        The only difference from the REST response is the `t` field is transformed
+        from a Unix Msec timestamp to a datetime object.
+        
+        If the historical record of the company is shorter than requested,
+        the full available history is returned.
     """
+    if (type(symbols) is not list) and (type(symbols) is not str):
+        raise RuntimeError("Symbols expected to be a list or string.")
 
-    in_window = lambda equity: (equity.listdate < start_date) and (equity.active)
-    active_in_window = list(filter(in_window, equity_listings))
+    if type(symbols) is str:
+        symbols = [symbols]
 
-    daily_eod = {}
-    loader = tqdm(active_in_window) if show_progress else active_in_window
-    api = tradeapi.REST()
-    for equity in loader:
-        try:
-            OHLCV = api.polygon.historic_agg_v2(equity.symbol, 1, 'day', _from = start_date, to = end_date).df
-        except:
-            continue
+    if api_key is None:
+        environment_key = os.getenv('POLYGON_IO_API_KEY')
+        if environment_key is None:
+            raise RuntimeError("Polygon Api Key is not provided and none found with name: POLYGON_IO_API_KEY")
+        else:
+            api_key = environment_key
 
-        daily_eod[equity.symbol] = OHLCV.sort_index()
+    loader = tqdm(symbols) if show_progress else symbols
+    start_date = start_date.strftime('%Y-%m-%d')
+    end_date = end_date.strftime('%Y-%m-%d')
+    eod_data = {}
+    with RESTClient(api_key) as client:
+        for symbol in loader:
+            response = client.stocks_equities_aggregates(symbol, 1, 'day', start_date, end_date)
+            if response.status == 'OK':
+                eod_data[symbol] = pd.DataFrame(response.results)
+                ## Convert from unix millisecond time stamp to date and time.
+                eod_data[symbol]['datetime'] = eod_data[symbol]['t'].apply(lambda timestamp: datetime.fromtimestamp(timestamp/1000.0)+timedelta(hours = 8))
+                eod_data[symbol].index = pd.DatetimeIndex(eod_data[symbol]['datetime'])
 
-    return daily_eod
+    return PolygonEOD(eod_data)
 
 def trim_daily_eod_data(daily_eod: dict):
     """

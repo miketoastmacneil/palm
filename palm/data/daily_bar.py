@@ -1,4 +1,5 @@
 import os
+from functools import lru_cache
 from pprint import PrettyPrinter
 import pytz
 from typing import List
@@ -12,7 +13,7 @@ from pandas.tseries.offsets import BDay
 from .data_utils import *
 from ..asset.equity import *
 
-class EquityEOD:
+class DailyBar:
     """
     Offers some facilities for querying EOD bar data. 
     """
@@ -35,7 +36,7 @@ class EquityEOD:
         trimmed_data = trim_daily_eod_data(data)
         trimmed_listings = [listing for listing in equity_listings if listing.symbol in trimmed_data.keys()]
 
-        return EquityEOD(trimmed_listings, trimmed_data, start_date, end_date)
+        return DailyBar(trimmed_listings, trimmed_data, start_date, end_date)
 
     def __init__(self, listings: list, data: dict, start_date: datetime, end_date: datetime):
         self.listings = listings
@@ -123,6 +124,7 @@ class EquityEOD:
     def low_prices(self):
         return self._get_field_array('low')
 
+    @lru_cache(maxsize = 6)
     def _get_field_array(self, field_name):
         T,N = self.shape
 
@@ -161,4 +163,4 @@ class EquityEOD:
         for symbol in sample_symbols:
             sample_dataframes[symbol] = self.data_frames[symbol]
 
-        return EquityEOD(sample_listings, sample_dataframes, self.start_date, self.end_date)
+        return DailyBar(sample_listings, sample_dataframes, self.start_date, self.end_date)
