@@ -11,6 +11,11 @@ class TimeInMarketDay(Enum):
     Closing = 2 
 
 class EODEvent:
+    """
+    End of Day time events for simulation, provides the 
+    use with what date it is and whether it is opening or closing.
+    In backtesting "date_index_since_start" is provided for convenience.
+    """
 
     def __init__(self, date, time_in_market_day, date_index_since_start):
 
@@ -18,12 +23,56 @@ class EODEvent:
         self.time_in_market_day = time_in_market_day
         self.date_index_since_start = date_index_since_start
 
+    def __repr__(self) -> str:
+        pp = pprint.PrettyPrinter(indent = 4)
+        state = {
+            "Time In Market Day": "Opening" if self.time_in_market_day==TimeInMarketDay.Opening else "Closing",
+            "Date Index Since Start": self.date_index_since_start,
+            "Date": self.date.date()
+        }
+        return pp.pformat(state)
+
+
 class ContextEOD(ContextObservable):
     """
-    Context object used in Simulation. 
+    Object used to generate events for 
+    a historical dataset as well as being 
+    the single source of truth for current price data.
 
-    Used to iterate over a historical dataset which implements
-    the Equity EOD interface.
+    Iterator Example:
+    -----------------
+    from datetime import datetime 
+    from palm.data.data_utils import pull_data_from_polygon
+    from palm.context.daily_bar_context import ContextEOD
+
+    symbols = ['MSFT']
+    start_date = datetime(2019, 1, 1)
+    end_date = datetime(2019, 2, 1)
+
+    data = pull_data_from_polygon(symbols, start_date, end_date)
+    context = ContextEOD(data)
+
+    for time_event in context:
+        print(time_event) ## EOD time event from above.
+        print(context) ## will update for each event generated
+
+    Subscribable Example:
+    ---------------------
+    from datetime import datetime 
+    from palm.data.data_utils import pull_data_from_polygon
+    from palm.context.daily_bar_context import ContextEOD
+
+    import rx
+
+    symbols = ['MSFT']
+    start_date = datetime(2019, 1, 1)
+    end_date = datetime(2019, 2, 1)
+
+    data = pull_data_from_polygon(symbols, start_date, end_date)
+    context = ContextEOD(data)
+
+    observable = rx.from_iterable(context)
+    observable.subscribe(lambda time_event: print(time_event))
     """
 
 
@@ -58,6 +107,7 @@ class ContextEOD(ContextObservable):
     def __iter__(self):
 
         while self.can_still_update():
+            ## Update myself before sending the event.
             self.update()
             yield EODEvent(
                     self._dates[self.current_date_index()],
@@ -89,6 +139,7 @@ class ContextEOD(ContextObservable):
         return self._dates[self._current_date_index]
 
     ## TODO, this needs to give the right time
+    ## To confirm when orders are submitted
     def current_time(self):
         return self.current_date()
 

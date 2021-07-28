@@ -10,8 +10,8 @@ from ..utils.generate_id import generate_hex_id
 class Position:
     """
     A position is the holding of a quantity of an asset.
-    It is the result of a successful order and subscribes
-    to the context to update its current market value
+    It is the result of a successful order 
+    and the current market value is given by the context.
     """
 
     class Status(Enum):

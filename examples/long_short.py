@@ -6,7 +6,6 @@ from palm.context.daily_bar_context import ContextEOD, TimeInMarketDay
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas_datareader as pdr
 
 import palm
 from palm.broker.simulated_broker import SimulatedBroker
