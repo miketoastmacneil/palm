@@ -65,11 +65,17 @@ class PolygonEOD(EquityEOD):
 
     @lru_cache(maxsize = 6)
     def _get_field_array(self, field_name):
+        """
+        Gets the T x N array for some specified field name.
+        In the case that data isn't available for certain indices, the data is filled with NaN.
+        """
         T,N = self.shape
 
         out = np.zeros((T,N))
         
         for (index, symbol) in enumerate(self.symbols):
-            out[:, index] = self.data[symbol][field_name].to_numpy()
+            column = self.data[symbol][field_name].to_numpy()
+            out[:len(column), index] = column
+            out[len(column):, index)] = NaN 
 
         return out
