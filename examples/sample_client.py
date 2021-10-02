@@ -22,9 +22,6 @@ data = pull_polygon_eod(symbol_list, start_date, end_date)
 context = ContextEOD(data)
 trader = SimulatedTrader(context, initial_deposit= 10000)
 
-## Separating into an asset as well as exit rule
-## lets the exit rule grab the asset from local scope
-
 account = trader.broker.get_cast_account()
 
 closing_prices = data.close_prices()

@@ -16,6 +16,9 @@ def pull_polygon_eod(symbols,
                         end_date: datetime, 
                         api_key = None, 
                         show_progress: bool = True):
+    ## TODO: Currently doesn't support getting datasets which don't have
+    ## survivor bias. Should handle the case where we don't have the complete data.
+    ## and fill it with NaN as a substitute for "unavailable".
 
     """
     Pulls EOD data from polygons API.

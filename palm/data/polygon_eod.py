@@ -76,6 +76,6 @@ class PolygonEOD(EquityEOD):
         for (index, symbol) in enumerate(self.symbols):
             column = self.data[symbol][field_name].to_numpy()
             out[:len(column), index] = column
-            out[len(column):, index)] = NaN 
+            out[len(column):, index] = NaN 
 
         return out
