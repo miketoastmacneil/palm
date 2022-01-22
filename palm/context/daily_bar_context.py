@@ -37,7 +37,8 @@ class ContextEOD(ContextObservable):
     """
     Object used to generate events for 
     a historical dataset as well as being 
-    the single source of truth for current price data.
+    the single source of truth for current and
+    previous price information.
 
     Iterator Example:
     -----------------
@@ -88,7 +89,50 @@ class ContextEOD(ContextObservable):
 
         T, _ = data_source.shape
         self._max_date_index = T-1
-        self._observers: Dict[str, Callable] = dict()
+
+        self._iterator_needs_to_update = False
+
+    def current_market_price(self, symbol):
+        """
+        This is what most of the observables are monitoring.
+        Its not needed for the alpha model but this is
+        how each price is updated.
+        """
+        t = self._current_date_index
+        i = self._data_source.symbol_to_column_index[symbol]
+        if self._time_in_market_day == TimeInMarketDay.Opening:
+            return self._open[t, i]
+        elif self._time_in_market_day == TimeInMarketDay.Closing:
+            return self._close[t, i]
+
+    def time_in_market_day(self):
+        return self._time_in_market_day
+
+    def current_date_index(self):
+        return self._current_date_index
+
+    def current_date(self):
+        return self._dates[self._current_date_index]
+
+    ## TODO, this needs to give the right time
+    ## To confirm when orders are submitted
+    def current_time(self):
+        return self.current_date()
+
+    def update(self):
+        """
+        'next' for the iterator
+        """
+        if not self.can_still_update():
+            return
+        
+        if self._time_in_market_day == TimeInMarketDay.Opening:
+            self._time_in_market_day = TimeInMarketDay.Closing
+        else:
+            self._time_in_market_day = TimeInMarketDay.Opening
+            self._current_date_index = self._current_date_index + 1
+
+        self.notify_observers()
 
     def can_still_update(self):
         """
@@ -108,53 +152,20 @@ class ContextEOD(ContextObservable):
 
         while self.can_still_update():
             ## Update myself before sending the event.
-            self.update()
-            yield EODEvent(
+            event = None
+            if not self._iterator_needs_to_update:
+                event = EODEvent(
                     self._dates[self.current_date_index()],
                     self._time_in_market_day,
                     self.current_date_index())
-
-    def update(self):
-        """
-        'next' for the iterator
-        """
-        if not self.can_still_update():
-            return
-        
-        if self._time_in_market_day == TimeInMarketDay.Opening:
-            self._time_in_market_day = TimeInMarketDay.Closing
-        else:
-            self._time_in_market_day = TimeInMarketDay.Opening
-            self._current_date_index = self._current_date_index + 1
-
-        self.notify_observers()
-
-    def time_in_market_day(self):
-        return self._time_in_market_day
-
-    def current_date_index(self):
-        return self._current_date_index
-
-    def current_date(self):
-        return self._dates[self._current_date_index]
-
-    ## TODO, this needs to give the right time
-    ## To confirm when orders are submitted
-    def current_time(self):
-        return self.current_date()
-
-    def current_market_price(self, symbol):
-        """
-        This is what most of the observables are monitoring.
-        Its not needed for the alpha model but this is
-        how each price is updated.
-        """
-        t = self._current_date_index
-        i = self._data_source.symbol_to_column_index[symbol]
-        if self._time_in_market_day == TimeInMarketDay.Opening:
-            return self._open[t, i]
-        elif self._time_in_market_day == TimeInMarketDay.Closing:
-            return self._close[t, i]
+                self._iterator_needs_to_update = True
+            else:
+                self.update()
+                event = EODEvent(
+                    self._dates[self.current_date_index()],
+                    self._time_in_market_day,
+                    self.current_date_index())
+            yield event
 
     def __repr__(self) -> str:
         pp = pprint.PrettyPrinter(indent = 4)

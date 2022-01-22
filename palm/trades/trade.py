@@ -37,7 +37,7 @@ class Trade:
                 order = MarketOrder.Sell(symbol, abs(quantity))
             if quantity > 0:
                 order = MarketOrder.Buy(symbol, abs(quantity))
-            if quantity == 0:
+            else:
                 continue
 
             self._entry_orders.append(order)
@@ -57,7 +57,7 @@ class Trade:
                 order = MarketOrder.Sell(symbol, abs(quantity))
             if quantity < 0:
                 order = MarketOrder.Buy(symbol, abs(quantity))
-            if quantity == 0:
+            else:
                 continue
             
             self._exit_orders.append(order)

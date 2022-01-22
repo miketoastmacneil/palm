@@ -12,6 +12,8 @@ class MarketOrderStatus(Enum):
     OPEN = 1
     CLOSED = 2 
     NOT_SUBMITTED = 3
+    SUBMITTED = 4
+    FAILED = 5
 
 class MarketOrder:
 
@@ -27,6 +29,9 @@ class MarketOrder:
 
         self.id = generate_hex_id()
 
+        if quantity <= 0:
+            raise ValueError("Market Order Quantity must be postive.")
+
         self._type = type
         self._symbol = symbol
         self._quantity = quantity
@@ -39,7 +44,7 @@ class MarketOrder:
         self.position_id = None
 
     def set_as_submitted(self, time_submitted):
-        self.status = MarketOrderStatus.OPEN
+        self.status = MarketOrderStatus.SUBMITTED
         self.time_submitted =  time_submitted
     
     def set_as_fulfilled(self, time, position_id):
@@ -47,6 +52,9 @@ class MarketOrder:
         self.fulfilled = True
         self.time_closed = time
         self.position_id = position_id
+
+    def set_as_failed(self, time):
+        self.status = MarketOrderStatus.FAILED
 
     @property
     def type(self):
@@ -60,6 +68,13 @@ class MarketOrder:
     def quantity(self):
         return self._quantity
     
+
+    def __eq__(self, other)->bool:
+        return self.id == other.id
+
+    def __hash__(self) -> int:
+        return hash(self.id)
+
     def __repr__(self) -> str:
         pp = pprint.PrettyPrinter(indent = 4)
         state = {

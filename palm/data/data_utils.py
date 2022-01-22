@@ -57,7 +57,7 @@ def pull_polygon_eod(symbols,
     if api_key is None:
         environment_key = os.getenv('POLYGON_IO_API_KEY')
         if environment_key is None:
-            raise RuntimeError("Polygon Api Key is not provided and none found with name: POLYGON_IO_API_KEY")
+            raise RuntimeError("Polygon Api Key is not provided and cannot find environment variable: POLYGON_IO_API_KEY")
         else:
             api_key = environment_key
 

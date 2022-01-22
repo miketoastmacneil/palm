@@ -12,12 +12,10 @@ from palm.broker.simulated_broker import SimulatedBroker
 from palm.trader.trader import SimulatedTrader
 from palm.orders.market_order import MarketOrder
 
-start_date = datetime(2019, 1, 1)
-end_date = datetime(2020, 10, 10)
+start_date = datetime(2019, 5, 1)
+end_date = datetime(2020, 10, 1)
 
-symbol_list = ['BAC',  'C', 
-                 'MS', 
-                'JPM', 'GS']
+symbol_list = ['AAPL', 'MSFT']
 
 data = pull_polygon_eod(symbol_list, start_date, end_date)
 
@@ -50,7 +48,7 @@ for time_event in context:
         continue
 
     t = time_event.date_index_since_start
-    returns_since_yesterday = (closing_prices[t,:]- closing_prices[t-1,:]) / closing_prices[t, :]
+    returns_since_yesterday = (closing_prices[t,:]- closing_prices[t-1,:]) / closing_prices[t-1, :]
     percent_returns = returns_since_yesterday/np.sum(np.abs(returns_since_yesterday))
     median_return = np.median(percent_returns)
 
@@ -60,12 +58,13 @@ for time_event in context:
         order_quantity[symbol_list[i]] = round(amount_to_invest / context.current_market_price(symbol_list[i]))
 
     ## Exit at next closing    
-    exit_rule = ExitRule(context, t+4)
+    exit_rule = ExitRule(context, t+1)
 
     trade = Trade(order_quantity, exit_rule)
     trader.submit_trade(trade)
     
     historical_portfolio_value.append(broker.portfolio_value())
 
-plt.plot(historical_portfolio_value)
+plt.plot(np.array(historical_portfolio_value))
+plt.plot(data.close_prices())
 plt.show()
