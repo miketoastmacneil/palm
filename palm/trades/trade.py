@@ -5,9 +5,6 @@ from typing import Callable, Dict
 
 from ..orders.market_order import MarketOrder
 
-## This should probably be trade executer.
-## TODO: Should a trade be responsible for submitting
-## its entry and exit order?
 class Trade:
 
     class Status(Enum):
@@ -43,7 +40,7 @@ class Trade:
             self._entry_orders.append(order)
             broker.submit_order(order)
          
-        self.status = Trade.Status.ACTIVE ## Status needs to be set to active to get the right market value
+        self.status = Trade.Status.ACTIVE 
         self._inital_value = self.current_market_value()
 
         return

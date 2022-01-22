@@ -22,3 +22,5 @@ def test_polygon_eod(eod_data):
 
     symbols = set(["AAPL","MSFT"])
     assert set(polygon_data.symbols) == symbols
+
+## TODO need to test open, close, volume and other fields needed to satisfy equity EOD.

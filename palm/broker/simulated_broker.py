@@ -3,12 +3,10 @@ from turtle import pos
 from urllib import response
 from ..trades.trade import Trade
 from ..utils.generate_id import generate_hex_id
-from ..positions.position import Position
-from ..positions.long_position import LongPosition
-from ..positions.short_position import ShortPosition
+from ..positions import Position, LongPosition, ShortPosition
 from .cash_account import CashAccount, DepositResult, WithdrawalResult
-from ..orders.market_order import MarketOrder, MarketOrderType
-from ..context.daily_bar_context import ContextEOD
+from ..orders import MarketOrder, MarketOrderType
+from ..context import ContextEOD
 
 class SimulatedBroker:
 
