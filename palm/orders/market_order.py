@@ -9,10 +9,9 @@ class MarketOrderType(Enum):
     SELL = 2
 
 class MarketOrderStatus(Enum):
-    OPEN = 1
-    CLOSED = 2 
     NOT_SUBMITTED = 3
     SUBMITTED = 4
+    CLOSED = 2 
     FAILED = 5
 
 class MarketOrder:
@@ -41,20 +40,22 @@ class MarketOrder:
 
         self.fulfilled = False
         self.time_closed = None
-        self.position_id = None
+        self.failure_reason = None
+        self.avg_cost = None
 
     def set_as_submitted(self, time_submitted):
         self.status = MarketOrderStatus.SUBMITTED
         self.time_submitted =  time_submitted
     
-    def set_as_fulfilled(self, time, position_id):
+    def set_as_fulfilled(self, time, avg_cost):
         self.status = MarketOrderStatus.CLOSED
         self.fulfilled = True
         self.time_closed = time
-        self.position_id = position_id
+        self.avg_cost = avg_cost
 
-    def set_as_failed(self, time):
+    def set_as_failed(self, reason):
         self.status = MarketOrderStatus.FAILED
+        self.failure_reason = reason
 
     @property
     def type(self):
@@ -67,7 +68,6 @@ class MarketOrder:
     @property
     def quantity(self):
         return self._quantity
-    
 
     def __eq__(self, other)->bool:
         return self.id == other.id
@@ -85,7 +85,7 @@ class MarketOrder:
             "Quantity": self.quantity,
             "Fulfilled": self.fulfilled,
             "Time Submitted": self.time_submitted,
-            "Position Id": self.position_id,
+            "Average Cost": self.avg_cost,
             "Time Closed": self.time_closed
         }
         return pp.pformat(state)

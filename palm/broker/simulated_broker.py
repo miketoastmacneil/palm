@@ -13,13 +13,11 @@ class SimulatedBroker:
     def __init__(self, context: ContextEOD, initial_deposit: float, margin = 2.0):
 
         self._cash_account = CashAccount(initial_deposit)
-        self._margin = margin
         self._positions_map = dict()
         self._orders = set()
         self._id = generate_hex_id()
 
         self._context = context
-        self._trades = []
 
     def submit_order(self, order: MarketOrder):
 
@@ -45,14 +43,21 @@ class SimulatedBroker:
 
         return
 
-    def get_positions(self):
+    @property
+    def all_positions(self):
         return self._positions_map
 
-    def get_orders(self):
+    @property
+    def all_orders(self):
         return self._orders
 
-    def get_cast_account(self):
+    @property
+    def cash_account(self):
         return self._cash_account
+
+    @property
+    def context(self):
+        return self._context
 
     def get_position(self, symbol):
         if symbol not in self._positions_map.keys():
@@ -83,8 +88,9 @@ class SimulatedBroker:
     def _open_position(self, order: MarketOrder):
 
         position = None
+        current_price = self._context.current_market_price(order.symbol)
         if order.type == MarketOrderType.BUY:
-            cost = self._context.current_market_price(order.symbol)*order.quantity
+            cost = current_price * order.quantity
             response = self._cash_account.submit_withdrawal_request(cost)
             if response.result == WithdrawalResult.APPROVED:
                 position = LongPosition(self._context, order)
@@ -101,7 +107,7 @@ class SimulatedBroker:
                 return
 
         if position is not None: 
-            order.set_as_fulfilled(self._context.current_time(), position.id)
+            order.set_as_fulfilled(self._context.current_time(), current_price)
             self._positions_map[position.symbol] = position
 
     def _modify_position(self, order: MarketOrder, position: Position):
