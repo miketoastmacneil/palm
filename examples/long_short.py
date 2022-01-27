@@ -47,6 +47,7 @@ for time_event in context:
     if is_open(time_event) or time_event.date_index_since_start==0:
         continue
 
+    historical_portfolio_value.append(broker.portfolio_value())
     t = time_event.date_index_since_start
     returns_since_yesterday = (closing_prices[t,:]- closing_prices[t-1,:]) / closing_prices[t-1, :]
     percent_returns = returns_since_yesterday/np.sum(np.abs(returns_since_yesterday))
@@ -61,7 +62,6 @@ for time_event in context:
     exit_rule = ExitRule(context, t+1)
 
     trade = Trade(order_quantity, exit_rule)
-    historical_portfolio_value.append(broker.portfolio_value())
     trader.submit_trade(trade)
     
 
