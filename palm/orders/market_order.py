@@ -69,7 +69,7 @@ class MarketOrder:
     def quantity(self):
         return self._quantity
 
-    def __eq__(self, other)->bool:
+    def __eq__(self, other) -> bool:
         return self.id == other.id
 
     def __hash__(self) -> int:

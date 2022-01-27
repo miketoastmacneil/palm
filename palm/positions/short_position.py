@@ -15,7 +15,7 @@ class ShortPosition(Position):
 
         self.order = order
         self.symbol = order.symbol
-        self.quantity = -order.quantity ## In a short, quantity is owed, so kept as negative
+        self.quantity = order.quantity ## In a short, quantity is owed, so kept as negative
         self.side = Position.Side.SHORT
 
     @property
@@ -27,11 +27,7 @@ class ShortPosition(Position):
         return
 
     def increase(self, additional_quantity):
-        """
-        Increasing a short position means the amount 
-        we owe increases.
-        """
-        self.quantity -= additional_quantity
+        self.quantity += additional_quantity
 
     def decrease(self, amount_to_decrease):
-        self.quantity += amount_to_decrease
+        self.quantity -= amount_to_decrease
