@@ -23,7 +23,7 @@ context = ContextEOD(data)
 ## Then do for event in context:
 trader = SimulatedTrader(context, initial_deposit = 10000) ## This would also have the broker
 broker = trader.broker
-account = trader.broker.get_cast_account()
+account = trader.broker.cash_account
 
 closing_prices = data.close_prices()
 historical_portfolio_value = []
@@ -44,7 +44,7 @@ class ExitRule:
 for time_event in context:
 
     ## Skip openings
-    if is_open(time_event):
+    if is_open(time_event) or time_event.date_index_since_start==0:
         continue
 
     t = time_event.date_index_since_start
@@ -54,16 +54,16 @@ for time_event in context:
 
     order_quantity = dict()
     for i in range(len(returns_since_yesterday)):
-        amount_to_invest = -(percent_returns[i] - median_return) * account.balance
-        order_quantity[symbol_list[i]] = round(amount_to_invest / context.current_market_price(symbol_list[i]))
+        amount_to_invest = (percent_returns[i] - median_return) * account.balance
+        order_quantity[symbol_list[i]] = int(round(amount_to_invest / context.current_market_price(symbol_list[i])))
 
     ## Exit at next closing    
     exit_rule = ExitRule(context, t+1)
 
     trade = Trade(order_quantity, exit_rule)
+    historical_portfolio_value.append(broker.portfolio_value())
     trader.submit_trade(trade)
     
-    historical_portfolio_value.append(broker.portfolio_value())
 
 plt.plot(np.array(historical_portfolio_value))
 plt.plot(data.close_prices())

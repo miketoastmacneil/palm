@@ -41,17 +41,17 @@ class MarketOrder:
         self.fulfilled = False
         self.time_closed = None
         self.failure_reason = None
-        self.avg_cost = None
+        self.avg_price = None
 
     def set_as_submitted(self, time_submitted):
         self.status = MarketOrderStatus.SUBMITTED
         self.time_submitted =  time_submitted
     
-    def set_as_fulfilled(self, time, avg_cost):
+    def set_as_fulfilled(self, time, avg_price):
         self.status = MarketOrderStatus.CLOSED
         self.fulfilled = True
         self.time_closed = time
-        self.avg_cost = avg_cost
+        self.avg_price = avg_price
 
     def set_as_failed(self, reason):
         self.status = MarketOrderStatus.FAILED
@@ -85,7 +85,7 @@ class MarketOrder:
             "Quantity": self.quantity,
             "Fulfilled": self.fulfilled,
             "Time Submitted": self.time_submitted,
-            "Average Cost": self.avg_cost,
+            "Average Price": self.avg_price,
             "Time Closed": self.time_closed
         }
         return pp.pformat(state)

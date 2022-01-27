@@ -18,6 +18,14 @@ class ShortPosition(Position):
         self.quantity = -order.quantity ## In a short, quantity is owed, so kept as negative
         self.side = Position.Side.SHORT
 
+    @property
+    def current_dollar_value(self):
+        return -1.0*self._context.current_market_price(self.symbol)*self.quantity
+
+    @current_dollar_value.setter
+    def current_dollar_value(self):
+        return
+
     def increase(self, additional_quantity):
         """
         Increasing a short position means the amount 

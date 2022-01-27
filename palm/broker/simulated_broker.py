@@ -16,6 +16,7 @@ class SimulatedBroker:
         self._positions_map = dict()
         self._orders = set()
         self._id = generate_hex_id()
+        self._positions_history = set()
 
         self._context = context
 
@@ -30,7 +31,6 @@ class SimulatedBroker:
     def liquidate_position(self, symbol):
 
         position = self.get_position(symbol)
-
         if position is None:
             return
         if position.side == Position.Side.LONG:
@@ -39,8 +39,6 @@ class SimulatedBroker:
             order = MarketOrder.Buy(symbol, abs(position.quantity))
 
         self.submit_order(order)
-        position.set_to_closed()
-
         return
 
     @property
@@ -58,6 +56,10 @@ class SimulatedBroker:
     @property
     def context(self):
         return self._context
+
+    @context.setter
+    def context(self):
+        raise RuntimeError("Cannot modify context at runtime.")
 
     def get_position(self, symbol):
         if symbol not in self._positions_map.keys():
@@ -113,40 +115,80 @@ class SimulatedBroker:
     def _modify_position(self, order: MarketOrder, position: Position):
 
         if (order.type == MarketOrderType.BUY) and (position.side == Position.Side.LONG) :
-            cost = self._context.current_market_price(order.symbol)*order.quantity
-            response = self._cash_account.submit_withdrawal_request(cost)
-            if response.result == WithdrawalResult.APPROVED:
-                position.increase(order.quantity)
-            else:
-                order.set_as_failed(self._context.current_time())
-                return
-
+            self._handle_increase_long_position(order, position)
+            
         if (order.type == MarketOrderType.SELL) and (position.side == Position.Side.LONG):
-            credit = self._context.current_market_price(order.symbol)*order.quantity
-            response = self._cash_account.submit_deposit_request(credit)
-            if response.result == DepositResult.CONFIRMED:
-                position.increase(order.quantity)
-            else:
-                order.set_as_failed(self._context.current_time())
+            self._handle_decrease_long_position(order, position)
 
         if (order.type == MarketOrderType.BUY) and (position.side == Position.Side.SHORT) :
-            cost = self._context.current_market_price(order.symbol)*order.quantity
-            response = self._cash_account.submit_withdrawal_request(cost)
-            if response.result == WithdrawalResult.APPROVED:
-                position.decrease(order.quantity)
-            else:
-                order.set_as_failed(self._context.current_time())
-                return
+            self._handle_decrease_short_position(order, position)
 
         if (order.type == MarketOrderType.SELL) and (position.side == Position.Side.SHORT):
-            credit = self._context.current_market_price(order.symbol)*order.quantity
-            response = self._cash_account.submit_deposit_request(credit)
-            if response.result == DepositResult.CONFIRMED:
-                position.increase(order.quantity)
-            else:
-                order.set_as_failed(self._context.current_time())
+            self._handle_increase_short_position(order, position)
 
-        order.set_as_fulfilled(self._context.current_time(), position.id)
         return
 
-   
+
+    def _handle_increase_long_position(self, order: MarketOrder, position):
+        
+        current_price = self._context.current_market_price(order.symbol) 
+        cost = current_price * order.quantity
+        response = self._cash_account.submit_withdrawal_request(cost)
+        if response.result == WithdrawalResult.APPROVED:
+            position.increase(order.quantity)
+            order.set_as_fulfilled(self.context.current_time(), current_price)
+        else:
+            order.set_as_failed(self._context.current_time(), response.reason)
+            return
+
+    def _handle_decrease_long_position(self, order: MarketOrder, position: LongPosition):
+
+        if order.quantity > position.quantity:
+            raise ValueError("Order to sell exceeds number of shares.")
+        current_price = self._context.current_market_price(order.symbol) 
+        credit = current_price * order.quantity
+        response = self._cash_account.submit_deposit_request(credit)
+        if response.result == DepositResult.CONFIRMED:
+            if order.quantity == position.quantity:
+                position.decrease(order.quantity)
+                position.set_to_closed()
+                self._positions_history.add(position)
+                del self._positions_map[position.symbol]
+            else:
+                position.decrease(order.quantity)
+        else:
+            order.set_as_failed(self._context.current_time(), response.reason)
+        return
+
+    def _handle_increase_short_position(self, order, position):
+
+        current_price = self._context.current_market_price(order.symbol)
+        credit = current_price * order.quantity
+        response = self._cash_account.submit_deposit_request(credit)
+        if response.result == DepositResult.CONFIRMED:
+            position.increase(order.quantity)
+            order.set_as_fulfilled(self.context.current_time(), current_price)
+        else:
+            order.set_as_failed(self._context.current_time(), response.reason)
+
+    def _handle_decrease_short_position(self, order, position):
+
+        if order.quantity > position.quantity:
+            raise ValueError("""
+                Order to decrease short position is buying too many shares.
+                Liquidate the position and open a new long position.
+            """)
+        current_price = self._context.current_market_price(order.symbol)
+        cost = current_price * order.quantity
+        response = self._cash_account.submit_withdrawal_request(cost)
+        if response.result == WithdrawalResult.APPROVED:
+            if order.quantity == position.quantity:
+                position.decrease(order.quantity)
+                position.set_to_closed()
+                self._positions_history.add(position)
+            else: 
+                position.decrease(order.quantity)
+            order.set_as_fulfilled(self.context.current_time(), current_price)
+        else:
+            order.set_as_failed(self._context.current_time(), response.reason)
+            return

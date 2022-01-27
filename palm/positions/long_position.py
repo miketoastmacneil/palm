@@ -17,7 +17,14 @@ class LongPosition(Position):
         self.symbol = order.symbol
         self.quantity = order.quantity 
         self.side = Position.Side.LONG
+    
+    @property
+    def current_dollar_value(self):
+        return self._context.current_market_price(self.symbol)*self.quantity
 
+    @current_dollar_value.setter
+    def current_dollar_value(self):
+        return
     def increase(self, additional_quantity):
         self.quantity += additional_quantity
 

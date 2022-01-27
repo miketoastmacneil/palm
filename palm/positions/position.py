@@ -41,13 +41,11 @@ class Position:
         self.status      = Position.Status.CLOSED
         return
 
-    @property
-    def current_dollar_value(self):
-        return self._context.current_market_price(self.symbol)*self.quantity
+    def __eq__(self, other):
+        return self.id == other.id
 
-    @current_dollar_value.setter
-    def current_dollar_value(self):
-        return
+    def __hash__(self) -> int:
+        return hash(str(self.id))
 
     @abstractmethod
     def increase(self, amount):

@@ -38,7 +38,7 @@ def broker(context, initial_deposit):
     return SimulatedBroker(context, initial_deposit)    
 
 
-def test_init(broker, initial_deposit):
+def test_broker_init(broker, initial_deposit):
 
     assert broker.cash_account.balance == initial_deposit
     assert broker.all_positions == {}
@@ -66,5 +66,21 @@ def test_submit_buy_order(broker, buy_order, initial_deposit):
     assert abs(broker.cash_account.balance - (initial_deposit - order_cost)) < 1.0e-5
 
 
+def test_submit_sell_order(broker, sell_order, initial_deposit):
+
+    broker.submit_order(sell_order)
+    assert sell_order.status == MarketOrderStatus.CLOSED
+    assert sell_order.fulfilled == True
+    assert sell_order.time_closed == broker.context.current_time()
+    assert sell_order in broker.all_orders
+    assert sell_order.failure_reason is None
+    assert abs(sell_order.avg_cost - broker.context.current_market_price(sell_order.symbol)) < 1.0e-5 
+
+    position = broker.get_position(sell_order.symbol)
+    assert position.side == Position.Side.SHORT
+    assert position.status == Position.Status.OPEN
+
+    order_cost = sell_order.quantity * broker.context.current_market_price(buy_order.symbol)
+    assert abs(broker.cash_account.balance - (initial_deposit + order_credit)) < 1.0e-5
  
     
