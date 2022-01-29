@@ -1,7 +1,8 @@
 
+from multiprocessing.sharedctypes import Value
 from ..context.daily_bar_context import ContextEOD
 from .position import Position
-from ..orders.market_order import MarketOrder
+from ..orders.market_order import MarketOrder, MarketOrderType
 
 class LongPosition(Position):
     """
@@ -13,9 +14,11 @@ class LongPosition(Position):
     def __init__(self, context: ContextEOD, order: MarketOrder):
         super(LongPosition, self).__init__(context) ## assigns context and opening time.
 
+        if order.type != MarketOrderType.BUY:
+            raise ValueError("Long position requires a buy order.")
         self.order = order
         self.symbol = order.symbol
-        self.quantity = order.quantity 
+        self.quantity = int(order.quantity)
         self.side = Position.Side.LONG
     
     @property
@@ -29,4 +32,13 @@ class LongPosition(Position):
         self.quantity += additional_quantity
 
     def decrease(self, amount_to_decrease):
+
+        amount_to_decrease = int(amount_to_decrease)
+        if amount_to_decrease > self.quantity:
+            raise ValueError("""
+                Position in {} is {}, cannot decrease position by {}.
+            """.format(self.symbol, self.quantity, amount_to_decrease))
+
         self.quantity -= amount_to_decrease
+        if amount_to_decrease == self.quantity:
+            self.set_to_closed()

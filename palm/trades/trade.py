@@ -3,6 +3,8 @@ from enum import Enum
 import pprint
 from typing import Callable, Dict
 
+from palm.utils.generate_id import generate_hex_id
+
 from ..orders.market_order import MarketOrder
 
 class Trade:
@@ -13,6 +15,8 @@ class Trade:
         COMPLETE = 3
 
     def __init__(self, number_of_shares: Dict[str, int], exit_rule: Callable = None):
+
+        self.id = generate_hex_id()
         self._shares = number_of_shares
         self._exit_rule = exit_rule
         self._entry_orders = []

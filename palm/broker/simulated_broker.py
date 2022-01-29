@@ -16,7 +16,7 @@ class SimulatedBroker:
         self._positions_map = dict()
         self._orders = set()
         self._id = generate_hex_id()
-        self._positions_history = set()
+        self._positions_history = []
 
         self._context = context
 
@@ -152,7 +152,7 @@ class SimulatedBroker:
             if order.quantity == position.quantity:
                 position.decrease(order.quantity)
                 position.set_to_closed()
-                self._positions_history.add(position)
+                self._positions_history.append(position)
                 del self._positions_map[position.symbol]
             else:
                 position.decrease(order.quantity)
@@ -185,7 +185,8 @@ class SimulatedBroker:
             if order.quantity == position.quantity:
                 position.decrease(order.quantity)
                 position.set_to_closed()
-                self._positions_history.add(position)
+                self._positions_history.append(position)
+                del self._positions_map[order.symbol]
             else: 
                 position.decrease(order.quantity)
             order.set_as_fulfilled(self.context.current_time(), current_price)

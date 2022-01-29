@@ -33,7 +33,7 @@ class MarketOrder:
 
         self._type = type
         self._symbol = symbol
-        self._quantity = quantity
+        self._quantity = int(quantity)
 
         self.status = MarketOrderStatus.NOT_SUBMITTED
         self.time_submitted = None

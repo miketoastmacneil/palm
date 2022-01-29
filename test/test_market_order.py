@@ -8,9 +8,10 @@ def test_legal_init():
     assert order.status == MarketOrderStatus.NOT_SUBMITTED
     assert order.type == MarketOrderType.BUY
     assert order._quantity == 1
+    assert type(order.quantity) == int
     assert order.fulfilled == False
     assert order.failure_reason == None
-    assert order.avg_cost == None
+    assert order.avg_price == None
 
 def test_illegal_init():
     with pytest.raises(ValueError):
