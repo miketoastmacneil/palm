@@ -28,7 +28,7 @@ account = trader.broker.cash_account
 closing_prices = data.close_prices()
 historical_portfolio_value = []
 
-is_open = lambda time_event: time_event.time_in_market_day == TimeInMarketDay.Opening
+is_close = lambda time_event: time_event.time_in_market_day == TimeInMarketDay.Closing
 
 class ExitRule:
 
@@ -41,12 +41,9 @@ class ExitRule:
         is_next_day = self.context.current_date_index()==self.time_to_close
         return (is_closing and is_next_day)
 
-for time_event in context:
+for time_event in filter(lambda event: is_close(event), context):
 
     ## Skip openings
-    if is_open(time_event) or time_event.date_index_since_start==0:
-        continue
-
     t = time_event.date_index_since_start
     returns_since_yesterday = (closing_prices[t,:]- closing_prices[t-1,:]) / closing_prices[t-1, :]
     percent_returns = returns_since_yesterday/np.sum(np.abs(returns_since_yesterday))
@@ -54,7 +51,7 @@ for time_event in context:
 
     order_quantity = dict()
     for i in range(len(returns_since_yesterday)):
-        amount_to_invest = (percent_returns[i] - median_return) * account.balance
+        amount_to_invest = -(percent_returns[i]) * account.balance
         order_quantity[symbol_list[i]] = int(round(amount_to_invest / context.current_market_price(symbol_list[i])))
 
     ## Exit at next closing    

@@ -25,7 +25,7 @@ class Trade:
         self.status = Trade.Status.INACTIVE
         self._context = None
         self._trade_complete = False
-        self._inital_value = 0.0
+        self._initial_value = 0.0
         self._exit_value = 0.0
 
     def submit_entry_order(self, broker):
@@ -43,10 +43,15 @@ class Trade:
                 continue
 
             self._entry_orders.append(order)
+
+        ## By default, want to do all the selling before the buying. 
+        entry_orders = sorted(self._entry_orders, lambda order: order.quantity)
+        self._entry_orders = entry_orders
+        for order in entry_orders:
             broker.submit_order(order)
          
         self.status = Trade.Status.ACTIVE 
-        self._inital_value = self.current_market_value()
+        self._initial_value = self.current_market_value()
 
         return
 
@@ -88,7 +93,7 @@ class Trade:
                 value += self._context.current_market_price(symbol)*quantity
             return value
         elif self.status == Trade.Status.COMPLETE:
-            return self._exit_value - self._inital_value
+            return self._exit_value - self._initial_value
         else:
             raise RuntimeError("Trade Status not recognized.")
 
@@ -96,9 +101,9 @@ class Trade:
         if self.status == Trade.Status.INACTIVE:
             return 0.0 
         if self.status == Trade.Status.ACTIVE:
-            return self.current_market_value()-self._inital_value
+            return self.current_market_value()-self._initial_value
         if self.status == Trade.Status.COMPLETE:
-            return self._exit_value- self._inital_value
+            return self._exit_value- self._initial_value
         else:
             raise RuntimeError("Trade Status not recognized.")
 
@@ -109,7 +114,7 @@ class Trade:
         pp = pprint.PrettyPrinter(indent = 4)
         state = {
             "Status": self.status,
-            "Initial Value": self._inital_value,
+            "Initial Value": self._initial_value,
             "Exit Value": self._exit_value,
             "Profit and Loss": self.profit_and_loss(),
             "Assets": self._shares,
