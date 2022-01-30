@@ -16,7 +16,6 @@ class SimulatedBroker:
         self._positions_map = dict()
         self._orders = set()
         self._id = generate_hex_id()
-        self._positions_history = []
 
         self._context = context
 
@@ -33,7 +32,7 @@ class SimulatedBroker:
         position = self.get_position(symbol)
         if position is None:
             return
-        if position.side == Position.Side.LONG:
+        elif position.side == Position.Side.LONG:
             order = MarketOrder.Sell(symbol, position.quantity)
         elif position.side == Position.Side.SHORT:
             order = MarketOrder.Buy(symbol, abs(position.quantity))
