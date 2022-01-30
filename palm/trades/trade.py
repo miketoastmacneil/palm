@@ -34,9 +34,10 @@ class Trade:
 
         for symbol in self._shares.keys():
             quantity = self._shares[symbol]
+            order = None
             if quantity < 0:
                 order = MarketOrder.Sell(symbol, abs(quantity))
-            if quantity > 0:
+            elif quantity > 0:
                 order = MarketOrder.Buy(symbol, abs(quantity))
             else:
                 continue
@@ -56,7 +57,7 @@ class Trade:
             order = None
             if quantity > 0:
                 order = MarketOrder.Sell(symbol, abs(quantity))
-            if quantity < 0:
+            elif quantity < 0:
                 order = MarketOrder.Buy(symbol, abs(quantity))
             else:
                 continue
@@ -100,6 +101,9 @@ class Trade:
             return self._exit_value- self._inital_value
         else:
             raise RuntimeError("Trade Status not recognized.")
+
+    def __eq__(self, other):
+        return self.id == other.id
 
     def __repr__(self) -> str:
         pp = pprint.PrettyPrinter(indent = 4)

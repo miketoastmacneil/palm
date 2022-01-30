@@ -9,8 +9,6 @@ class SimulatedTrader:
     Handles the logic for submitting and closing out trades
     which are more complicated than a single asset.
 
-    Creating one has a dependency on two other classes so at
-    the moment its a bit of a pain in the ass to create one.
     """
 
     def __init__(self, context: ContextObservable, initial_deposit):

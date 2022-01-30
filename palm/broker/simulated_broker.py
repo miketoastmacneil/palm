@@ -156,6 +156,7 @@ class SimulatedBroker:
                 del self._positions_map[position.symbol]
             else:
                 position.decrease(order.quantity)
+            order.set_as_fulfilled(self.context.current_time(), current_price)
         else:
             order.set_as_failed(self._context.current_time(), response.reason)
         return
