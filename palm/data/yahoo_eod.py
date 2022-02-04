@@ -8,7 +8,6 @@ class YahooEOD(EquityEOD):
     """
     Class implementing the EquityEOD interface
     for Yahoo EOD data pulled from pandas_datareader.
-
     """
 
     def __init__(self, data: pd.DataFrame):

@@ -45,9 +45,8 @@ class Trade:
             self._entry_orders.append(order)
 
         ## By default, want to do all the selling before the buying. 
-        entry_orders = sorted(self._entry_orders, lambda order: order.quantity)
-        self._entry_orders = entry_orders
-        for order in entry_orders:
+        sorted(self._entry_orders, key=lambda order: order.quantity)
+        for order in self._entry_orders:
             broker.submit_order(order)
          
         self.status = Trade.Status.ACTIVE 
@@ -68,6 +67,9 @@ class Trade:
                 continue
             
             self._exit_orders.append(order)
+
+        sorted(self._exit_orders, key=lambda order: order.quantity)
+        for order in self._exit_orders:
             broker.submit_order(order)
 
         self._exit_value = self.current_market_value()

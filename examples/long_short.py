@@ -1,34 +1,28 @@
 
 from datetime import datetime
-from palm.data.data_utils import pull_polygon_eod
-from palm.trades.trade import Trade
-from palm.context.daily_bar_context import ContextEOD, TimeInMarketDay
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-import palm
-from palm.broker.simulated_broker import SimulatedBroker
-from palm.trader.trader import SimulatedTrader
-from palm.orders.market_order import MarketOrder
+import palm as pm
 
 start_date = datetime(2019, 5, 1)
 end_date = datetime(2020, 10, 1)
 
 symbol_list = ['AAPL', 'MSFT']
 
-data = pull_polygon_eod(symbol_list, start_date, end_date)
+data = pm.pull_polygon_eod(symbol_list, start_date, end_date)
 
-context = ContextEOD(data)
+context = pm.ContextEOD(data)
 ## Then do for event in context:
-trader = SimulatedTrader(context, initial_deposit = 10000) ## This would also have the broker
+trader = pm.SimulatedTrader(context, initial_deposit = 10000) ## This would also have the broker
 broker = trader.broker
 account = trader.broker.cash_account
 
 closing_prices = data.close_prices()
 historical_portfolio_value = []
 
-is_close = lambda time_event: time_event.time_in_market_day == TimeInMarketDay.Closing
+is_close = lambda time_event: time_event.time_in_market_day == pm.TimeInMarketDay.Closing
 
 class ExitRule:
 
@@ -37,7 +31,7 @@ class ExitRule:
         self.time_to_close = time_to_close
 
     def __call__(self):
-        is_closing = self.context.time_in_market_day()==TimeInMarketDay.Closing
+        is_closing = self.context.time_in_market_day()==pm.TimeInMarketDay.Closing
         is_next_day = self.context.current_date_index()==self.time_to_close
         return (is_closing and is_next_day)
 
@@ -57,7 +51,7 @@ for time_event in filter(lambda event: is_close(event), context):
     ## Exit at next closing    
     exit_rule = ExitRule(context, t+1)
 
-    trade = Trade(order_quantity, exit_rule)
+    trade = pm.Trade(order_quantity, exit_rule)
     trader.submit_trade(trade)
     historical_portfolio_value.append(broker.portfolio_value())
     

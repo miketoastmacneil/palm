@@ -40,5 +40,5 @@ class ShortPosition(Position):
             """.format(self.symbol, self.quantity, amount_to_decrease))
 
         self.quantity -= amount_to_decrease
-        if amount_to_decrease == self.quantity:
+        if int(amount_to_decrease) == self.quantity:
             self.set_to_closed()

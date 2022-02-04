@@ -137,7 +137,7 @@ class SimulatedBroker:
             position.increase(order.quantity)
             order.set_as_fulfilled(self.context.current_time(), current_price)
         else:
-            order.set_as_failed(self._context.current_time(), response.reason)
+            order.set_as_failed(response.reason)
             return
 
     def _handle_decrease_long_position(self, order: MarketOrder, position: LongPosition):
@@ -151,13 +151,12 @@ class SimulatedBroker:
             if order.quantity == position.quantity:
                 position.decrease(order.quantity)
                 position.set_to_closed()
-                self._positions_history.append(position)
                 del self._positions_map[position.symbol]
             else:
                 position.decrease(order.quantity)
             order.set_as_fulfilled(self.context.current_time(), current_price)
         else:
-            order.set_as_failed(self._context.current_time(), response.reason)
+            order.set_as_failed(response.reason)
         return
 
     def _handle_increase_short_position(self, order, position):
@@ -169,7 +168,7 @@ class SimulatedBroker:
             position.increase(order.quantity)
             order.set_as_fulfilled(self.context.current_time(), current_price)
         else:
-            order.set_as_failed(self._context.current_time(), response.reason)
+            order.set_as_failed(response.reason)
 
     def _handle_decrease_short_position(self, order, position):
 
@@ -185,11 +184,10 @@ class SimulatedBroker:
             if order.quantity == position.quantity:
                 position.decrease(order.quantity)
                 position.set_to_closed()
-                self._positions_history.append(position)
                 del self._positions_map[order.symbol]
             else: 
                 position.decrease(order.quantity)
             order.set_as_fulfilled(self.context.current_time(), current_price)
         else:
-            order.set_as_failed(self._context.current_time(), response.reason)
+            order.set_as_failed(response.reason)
             return

@@ -19,6 +19,8 @@ class LongPosition(Position):
         self.order = order
         self.symbol = order.symbol
         self.quantity = int(order.quantity)
+        if self.quantity < 0:
+            raise ValueError("Order quantity needs to be positive to open a long position.")
         self.side = Position.Side.LONG
     
     @property
