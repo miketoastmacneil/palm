@@ -16,6 +16,6 @@ setup(
     install_requires=(
         "numpy==1.21.0",
         "pandas==1.4.0",
-        "tqdm==4.6.3"
+        "tqdm==4.62.3"
     )
 )
