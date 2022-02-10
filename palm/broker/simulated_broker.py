@@ -127,7 +127,6 @@ class SimulatedBroker:
 
         return
 
-
     def _handle_increase_long_position(self, order: MarketOrder, position):
         
         current_price = self._context.current_market_price(order.symbol) 
