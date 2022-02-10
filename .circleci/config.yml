@@ -34,7 +34,7 @@ jobs:
           command: |
             python setup.py sdist bdist_wheel
             pip install pipenv
-            pipenv install dist/convrsn-0.0.2-py3-none-any.whl
+            pipenv install dist/palm-0.0.1-py3-none-any.whl
             pipenv install pytest
       #- python/install-packages:
       #    pkg-manager: pip
