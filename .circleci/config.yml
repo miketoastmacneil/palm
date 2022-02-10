@@ -29,6 +29,7 @@ jobs:
     # CircleCI will report the results back to your VCS provider.
     steps:
       - checkout
+      - run: brew install pyenv
       - run:
           name: Install
           command: |
