@@ -1,9 +1,8 @@
 
 from enum import Enum
 import pprint
-from typing import Callable, Dict
 
-from ..data.equity_eod import EquityEOD
+from ..data import EquityEOD
 from .context_observable import ContextObservable
 
 class TimeInMarketDay(Enum):

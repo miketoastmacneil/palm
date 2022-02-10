@@ -8,7 +8,6 @@ import os
 from datetime import datetime
 import numpy as np
 import pandas as pd 
-from pandas.tseries.offsets import BDay
 
 from .data_utils import *
 from ..asset.equity import *

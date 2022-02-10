@@ -1,10 +1,8 @@
 from abc import abstractmethod
 from enum import Enum
 import pprint
-from typing import Dict
 
 from ..context.daily_bar_context import ContextEOD
-from ..orders.market_order import MarketOrder
 from ..utils.generate_id import generate_hex_id
 
 class Position:

@@ -1,7 +1,4 @@
 
-from turtle import pos
-from urllib import response
-from ..trades.trade import Trade
 from ..utils.generate_id import generate_hex_id
 from ..positions import Position, LongPosition, ShortPosition
 from .cash_account import CashAccount, DepositResult, WithdrawalResult
