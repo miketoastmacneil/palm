@@ -45,6 +45,10 @@ jobs:
           # This assumes pytest is installed via the install-package step above
           command: |
             pipenv run pytest 
+      - run: 
+          name: Make Test Dir
+          command: |
+            mkdir test-results
       - store_test_results:
           path: test-results
 
