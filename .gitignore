@@ -1,1 +1,7 @@
 __pycache__/
+build
+dist
+palm.egg-info
+Pipfile
+.coverage
+htmlcov

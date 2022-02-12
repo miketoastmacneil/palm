@@ -1,5 +1,4 @@
 
-from multiprocessing.sharedctypes import Value
 from ..context.daily_bar_context import ContextEOD
 from .position import Position
 from ..orders.market_order import MarketOrder, MarketOrderType

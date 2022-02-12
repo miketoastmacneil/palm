@@ -15,6 +15,7 @@ data = pm.pull_polygon_eod(symbol_list, start_date, end_date)
 
 context = pm.ContextEOD(data)
 ## Then do for event in context:
+## Should be able to just add the dates and then start the run.
 trader = pm.SimulatedTrader(context, initial_deposit = 10000) ## This would also have the broker
 broker = trader.broker
 account = trader.broker.cash_account

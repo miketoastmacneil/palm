@@ -1,7 +1,4 @@
 
-from turtle import pos
-from urllib import response
-from ..trades.trade import Trade
 from ..utils.generate_id import generate_hex_id
 from ..positions import Position, LongPosition, ShortPosition
 from .cash_account import CashAccount, DepositResult, WithdrawalResult
@@ -126,7 +123,6 @@ class SimulatedBroker:
             self._handle_increase_short_position(order, position)
 
         return
-
 
     def _handle_increase_long_position(self, order: MarketOrder, position):
         
