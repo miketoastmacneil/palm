@@ -1,8 +1,8 @@
-
-import pytest 
+import pytest
 
 import pandas as pd
 from palm.data import PolygonEOD
+
 
 @pytest.fixture
 def eod_data():
@@ -13,14 +13,16 @@ def eod_data():
 
     return data
 
+
 def test_polygon_eod(eod_data):
 
     polygon_data = PolygonEOD(eod_data)
     T, N = polygon_data.shape
-    assert T==178
-    assert N==2
+    assert T == 178
+    assert N == 2
 
-    symbols = set(["AAPL","MSFT"])
+    symbols = set(["AAPL", "MSFT"])
     assert set(polygon_data.symbols) == symbols
+
 
 ## TODO need to test open, close, volume and other fields needed to satisfy equity EOD.

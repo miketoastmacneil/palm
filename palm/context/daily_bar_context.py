@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import Enum
 import pprint
 
@@ -33,16 +34,6 @@ class EODEvent:
             "Date": self.date.date(),
         }
         return pp.pformat(state)
-
-
-class EODEventGenerator:
-    def __init__(self, dates):
-        self._dates = dates
-        self._current_index = 0
-        self._time_in_market_day = TimeInMarketDay.Opening
-
-    def __iter__(self):
-        return
 
 
 class ContextEOD(ContextObservable):
@@ -88,15 +79,16 @@ class ContextEOD(ContextObservable):
     observable.subscribe(lambda time_event: print(time_event))
     """
 
-    def __init__(self, data_source: EquityEOD):
+    def __init__(self, start_date: datetime, data_source: EquityEOD):
         super(ContextEOD, self).__init__()
         self._data_source = data_source
-        self._current_date_index = 0
-        self._time_in_market_day = TimeInMarketDay.Opening
 
-        self._open = self._data_source.open_prices()
-        self._close = self._data_source.close_prices()
-        self._dates = self._data_source.dates()
+        self._open = self._data_source["Open"]
+        self._close = self._data_source["Close"]
+        self._dates = self._data_source["Dates"]
+
+        self._current_date_index = (start_date - self._dates[0]).days
+        self._time_in_market_day = TimeInMarketDay.Opening
 
         T, _ = data_source.shape
         self._max_date_index = T - 1
@@ -194,56 +186,3 @@ class ContextEOD(ContextObservable):
             "Current Date in Simulation": self.current_date().date(),
         }
         return pp.pformat(state)
-
-
-class HistoricaEODlDataWrapper:
-    def __init__(self, data: EquityEOD):
-
-        self._data = data
-        self._current_time = None
-
-    def open_prices(from_date, to_date, of):
-        return
-
-    def close_prices(from_date, to_date, of="all"):
-        return
-
-    def high_prices(from_date, to_date, of="all"):
-        return
-
-    def low_prices(from_date, to_date, of="all"):
-        return
-
-    def volume(from_date, to_date, of="all"):
-        return
-
-    def _update_datetime(self, eod_time_event):
-        self._current_time = eod_time_event
-
-    def _of_argument_is_ok(self, of):
-
-        if (type(of) is not list) or (type(of) is not str):
-            raise RuntimeError(
-                """
-                    Requested symbols must be a string or list, 
-                    received {} with type {}.
-                """.format(
-                    of, type(of)
-                )
-            )
-
-        if type(of) is str:
-            if of != "all":
-                raise RuntimeError(
-                    """
-                    Requested symbols must be a list, or 'all',
-                    received {}.
-                    """.format(
-                        of
-                    )
-                )
-            else:
-                return True
-
-
-## It really should be context.events()

@@ -11,7 +11,6 @@ class SimulatedBroker:
         self._cash_account = CashAccount(initial_deposit)
         self._positions_map = dict()
         self._orders = set()
-        self._id = generate_hex_id()
 
         self._context = context
 

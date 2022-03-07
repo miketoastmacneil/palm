@@ -5,3 +5,4 @@ from .orders import *
 from .positions import *
 from .trader import *
 from .trades import *
+from .backtestsession import *

@@ -1,4 +1,3 @@
- 
 from turtle import pos
 from palm.positions.long_position import LongPosition
 from palm.positions.position import Position
@@ -16,9 +15,11 @@ from palm.context import ContextEOD
 def buy_order():
     return MarketOrder.Buy("MSFT", 1)
 
+
 @pytest.fixture
 def sell_order():
     return MarketOrder.Sell("MSFT", 1)
+
 
 @pytest.fixture
 def eod_data():
@@ -29,9 +30,11 @@ def eod_data():
 
     return PolygonEOD(data)
 
+
 @pytest.fixture
 def context(eod_data):
     return ContextEOD(eod_data)
+
 
 def test_long_position(context, buy_order):
 
@@ -74,4 +77,3 @@ def test_short_position(context, sell_order):
     position.decrease(1)
     assert position.quantity == 0
     assert position.status == position.Status.CLOSED
-
