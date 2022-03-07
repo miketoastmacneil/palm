@@ -1,17 +1,18 @@
-
 from enum import Enum
 import pprint
 
 from ..data import EquityEOD
 from .context_observable import ContextObservable
 
+
 class TimeInMarketDay(Enum):
     Opening = 1
-    Closing = 2 
+    Closing = 2
+
 
 class EODEvent:
     """
-    End of Day time events for simulation, provides the 
+    End of Day time events for simulation, provides the
     use with what date it is and whether it is opening or closing.
     In backtesting "date_index_since_start" is provided for convenience.
     """
@@ -23,25 +24,37 @@ class EODEvent:
         self.date_index_since_start = date_index_since_start
 
     def __repr__(self) -> str:
-        pp = pprint.PrettyPrinter(indent = 4)
+        pp = pprint.PrettyPrinter(indent=4)
         state = {
-            "Time In Market Day": "Opening" if self.time_in_market_day==TimeInMarketDay.Opening else "Closing",
+            "Time In Market Day": "Opening"
+            if self.time_in_market_day == TimeInMarketDay.Opening
+            else "Closing",
             "Date Index Since Start": self.date_index_since_start,
-            "Date": self.date.date()
+            "Date": self.date.date(),
         }
         return pp.pformat(state)
 
 
+class EODEventGenerator:
+    def __init__(self, dates):
+        self._dates = dates
+        self._current_index = 0
+        self._time_in_market_day = TimeInMarketDay.Opening
+
+    def __iter__(self):
+        return
+
+
 class ContextEOD(ContextObservable):
     """
-    Object used to generate events for 
-    a historical dataset as well as being 
+    Object used to generate events for
+    a historical dataset as well as being
     the single source of truth for current and
     previous price information.
 
     Iterator Example:
     -----------------
-    from datetime import datetime 
+    from datetime import datetime
     from palm.data.data_utils import pull_data_from_polygon
     from palm.context.daily_bar_context import ContextEOD
 
@@ -58,7 +71,7 @@ class ContextEOD(ContextObservable):
 
     Subscribable Example:
     ---------------------
-    from datetime import datetime 
+    from datetime import datetime
     from palm.data.data_utils import pull_data_from_polygon
     from palm.context.daily_bar_context import ContextEOD
 
@@ -75,19 +88,18 @@ class ContextEOD(ContextObservable):
     observable.subscribe(lambda time_event: print(time_event))
     """
 
-
     def __init__(self, data_source: EquityEOD):
         super(ContextEOD, self).__init__()
-        self._data_source        = data_source
+        self._data_source = data_source
         self._current_date_index = 0
         self._time_in_market_day = TimeInMarketDay.Opening
 
-        self._open  = self._data_source.open_prices()
-        self._close = self._data_source.close_prices() 
+        self._open = self._data_source.open_prices()
+        self._close = self._data_source.close_prices()
         self._dates = self._data_source.dates()
 
         T, _ = data_source.shape
-        self._max_date_index = T-1
+        self._max_date_index = T - 1
 
         self._iterator_needs_to_update = False
 
@@ -113,6 +125,10 @@ class ContextEOD(ContextObservable):
     def current_date(self):
         return self._dates[self._current_date_index]
 
+    @property
+    def historical_data(self):
+        return self._historical_data
+
     ## TODO, this needs to give the right time
     ## To confirm when orders are submitted
     def current_time(self):
@@ -124,7 +140,7 @@ class ContextEOD(ContextObservable):
         """
         if not self.can_still_update():
             return
-        
+
         if self._time_in_market_day == TimeInMarketDay.Opening:
             self._time_in_market_day = TimeInMarketDay.Closing
         else:
@@ -138,7 +154,7 @@ class ContextEOD(ContextObservable):
         "end" of the iterator
         """
         at_the_last_day = self._current_date_index == self._max_date_index
-        at_closing_time = self._time_in_market_day == TimeInMarketDay.Closing 
+        at_closing_time = self._time_in_market_day == TimeInMarketDay.Closing
 
         its_closing_time_on_the_last_day = at_closing_time and at_the_last_day
 
@@ -146,7 +162,7 @@ class ContextEOD(ContextObservable):
             return False
         else:
             return True
-    
+
     def __iter__(self):
 
         while self.can_still_update():
@@ -156,21 +172,78 @@ class ContextEOD(ContextObservable):
                 event = EODEvent(
                     self._dates[self.current_date_index()],
                     self._time_in_market_day,
-                    self.current_date_index())
+                    self.current_date_index(),
+                )
                 self._iterator_needs_to_update = True
             else:
                 self.update()
                 event = EODEvent(
                     self._dates[self.current_date_index()],
                     self._time_in_market_day,
-                    self.current_date_index())
+                    self.current_date_index(),
+                )
             yield event
 
     def __repr__(self) -> str:
-        pp = pprint.PrettyPrinter(indent = 4)
+        pp = pprint.PrettyPrinter(indent=4)
         state = {
-            "Time In Market Day": "Opening" if self._time_in_market_day==TimeInMarketDay.Opening else "Closing",
+            "Time In Market Day": "Opening"
+            if self._time_in_market_day == TimeInMarketDay.Opening
+            else "Closing",
             "Current Time Index": self._current_date_index,
-            "Current Date in Simulation": self.current_date().date()
+            "Current Date in Simulation": self.current_date().date(),
         }
         return pp.pformat(state)
+
+
+class HistoricaEODlDataWrapper:
+    def __init__(self, data: EquityEOD):
+
+        self._data = data
+        self._current_time = None
+
+    def open_prices(from_date, to_date, of):
+        return
+
+    def close_prices(from_date, to_date, of="all"):
+        return
+
+    def high_prices(from_date, to_date, of="all"):
+        return
+
+    def low_prices(from_date, to_date, of="all"):
+        return
+
+    def volume(from_date, to_date, of="all"):
+        return
+
+    def _update_datetime(self, eod_time_event):
+        self._current_time = eod_time_event
+
+    def _of_argument_is_ok(self, of):
+
+        if (type(of) is not list) or (type(of) is not str):
+            raise RuntimeError(
+                """
+                    Requested symbols must be a string or list, 
+                    received {} with type {}.
+                """.format(
+                    of, type(of)
+                )
+            )
+
+        if type(of) is str:
+            if of != "all":
+                raise RuntimeError(
+                    """
+                    Requested symbols must be a list, or 'all',
+                    received {}.
+                    """.format(
+                        of
+                    )
+                )
+            else:
+                return True
+
+
+## It really should be context.events()

@@ -1,8 +1,8 @@
-
 from ..context.context_observable import ContextObservable
 from ..broker.simulated_broker import SimulatedBroker
 from ..utils.generate_id import generate_hex_id
 from ..trades.trade import Trade
+
 
 class SimulatedTrader:
     """
@@ -15,7 +15,7 @@ class SimulatedTrader:
 
         self.open_trades = []
         self.closed_trades = []
-        self._context = context 
+        self._context = context
         self.broker = SimulatedBroker(context, initial_deposit)
         self._id = generate_hex_id()
 

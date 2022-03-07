@@ -24,19 +24,17 @@ def test_init(eod_data):
     assert context.can_still_update()
     assert context.observers == {}
 
-def test_one_time_step(eod_data):
+def test_OneTimeStep_MovesFromOpeningToClosing(eod_data):
 
     context = ContextEOD(eod_data)
-    context.update()
-
     assert context.current_date_index()==0
-    assert context.time_in_market_day()==TimeInMarketDay.Closing
+    assert context.time_in_market_day()==TimeInMarketDay.Opening
     assert context.can_still_update()
 
     context.update()
 
-    assert context.current_date_index()==1
-    assert context.time_in_market_day()==TimeInMarketDay.Opening
+    assert context.current_date_index()==0
+    assert context.time_in_market_day()==TimeInMarketDay.Closing
     assert context.can_still_update()
 
 def test_final_time_step(eod_data):
@@ -68,8 +66,6 @@ def test_market_price(eod_data):
     ## Prices taken from first day close.
     assert context.current_market_price("AAPL") == 79.1425
     assert context.current_market_price("MSFT") == 166.5
-
-
 
 def test_iterator(eod_data):
 

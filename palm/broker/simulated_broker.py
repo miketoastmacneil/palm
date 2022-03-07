@@ -1,13 +1,12 @@
-
 from ..utils.generate_id import generate_hex_id
 from ..positions import Position, LongPosition, ShortPosition
 from .cash_account import CashAccount, DepositResult, WithdrawalResult
 from ..orders import MarketOrder, MarketOrderType
 from ..context import ContextEOD
 
-class SimulatedBroker:
 
-    def __init__(self, context: ContextEOD, initial_deposit: float, margin = 2.0):
+class SimulatedBroker:
+    def __init__(self, context: ContextEOD, initial_deposit: float, margin=2.0):
 
         self._cash_account = CashAccount(initial_deposit)
         self._positions_map = dict()
@@ -21,7 +20,7 @@ class SimulatedBroker:
         order.set_as_submitted(self._context.current_time())
         self._orders.add(order)
         self._process_order_at_current_price(order)
-        
+
         return
 
     def liquidate_position(self, symbol):
@@ -70,13 +69,13 @@ class SimulatedBroker:
         positions_value = 0.0
         for symbol in self._positions_map.keys():
             position = self._positions_map[symbol]
-            if position.status==Position.Status.OPEN: 
+            if position.status == Position.Status.OPEN:
                 positions_value += position.current_dollar_value
-    
-        return cash_value+positions_value
+
+        return cash_value + positions_value
 
     def _process_order_at_current_price(self, order: MarketOrder):
-        
+
         position = self.get_position(order.symbol)
         if position is None:
             self._open_position(order)
@@ -96,7 +95,7 @@ class SimulatedBroker:
                 order.set_as_failed(self._context.current_time())
                 return
         if order.type == MarketOrderType.SELL:
-            credit = self._context.current_market_price(order.symbol)*order.quantity
+            credit = self._context.current_market_price(order.symbol) * order.quantity
             response = self._cash_account.submit_deposit_request(credit)
             if response.result == DepositResult.CONFIRMED:
                 position = ShortPosition(self._context, order)
@@ -104,29 +103,37 @@ class SimulatedBroker:
                 order.set_as_failed(self._context.current_time())
                 return
 
-        if position is not None: 
+        if position is not None:
             order.set_as_fulfilled(self._context.current_time(), current_price)
             self._positions_map[position.symbol] = position
 
     def _modify_position(self, order: MarketOrder, position: Position):
 
-        if (order.type == MarketOrderType.BUY) and (position.side == Position.Side.LONG) :
+        if (order.type == MarketOrderType.BUY) and (
+            position.side == Position.Side.LONG
+        ):
             self._handle_increase_long_position(order, position)
-            
-        if (order.type == MarketOrderType.SELL) and (position.side == Position.Side.LONG):
+
+        if (order.type == MarketOrderType.SELL) and (
+            position.side == Position.Side.LONG
+        ):
             self._handle_decrease_long_position(order, position)
 
-        if (order.type == MarketOrderType.BUY) and (position.side == Position.Side.SHORT) :
+        if (order.type == MarketOrderType.BUY) and (
+            position.side == Position.Side.SHORT
+        ):
             self._handle_decrease_short_position(order, position)
 
-        if (order.type == MarketOrderType.SELL) and (position.side == Position.Side.SHORT):
+        if (order.type == MarketOrderType.SELL) and (
+            position.side == Position.Side.SHORT
+        ):
             self._handle_increase_short_position(order, position)
 
         return
 
     def _handle_increase_long_position(self, order: MarketOrder, position):
-        
-        current_price = self._context.current_market_price(order.symbol) 
+
+        current_price = self._context.current_market_price(order.symbol)
         cost = current_price * order.quantity
         response = self._cash_account.submit_withdrawal_request(cost)
         if response.result == WithdrawalResult.APPROVED:
@@ -136,11 +143,13 @@ class SimulatedBroker:
             order.set_as_failed(response.reason)
             return
 
-    def _handle_decrease_long_position(self, order: MarketOrder, position: LongPosition):
+    def _handle_decrease_long_position(
+        self, order: MarketOrder, position: LongPosition
+    ):
 
         if order.quantity > position.quantity:
             raise ValueError("Order to sell exceeds number of shares.")
-        current_price = self._context.current_market_price(order.symbol) 
+        current_price = self._context.current_market_price(order.symbol)
         credit = current_price * order.quantity
         response = self._cash_account.submit_deposit_request(credit)
         if response.result == DepositResult.CONFIRMED:
@@ -169,10 +178,12 @@ class SimulatedBroker:
     def _handle_decrease_short_position(self, order, position):
 
         if order.quantity > position.quantity:
-            raise ValueError("""
+            raise ValueError(
+                """
                 Order to decrease short position is buying too many shares.
                 Liquidate the position and open a new long position.
-            """)
+            """
+            )
         current_price = self._context.current_market_price(order.symbol)
         cost = current_price * order.quantity
         response = self._cash_account.submit_withdrawal_request(cost)
@@ -181,7 +192,7 @@ class SimulatedBroker:
                 position.decrease(order.quantity)
                 position.set_to_closed()
                 del self._positions_map[order.symbol]
-            else: 
+            else:
                 position.decrease(order.quantity)
             order.set_as_fulfilled(self.context.current_time(), current_price)
         else:

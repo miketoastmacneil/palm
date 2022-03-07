@@ -29,7 +29,7 @@ def test_InsufficientFunds_WithdrawalDeclined(account, initial_deposit):
     assert response.reason == WithdrawalResponse.DeclinedReason.INSUFFICIENT_FUNDS
     assert abs(account.balance - initial_deposit) < 1.0e-5
 
-def test_NegativeWithdrawalAmount_WithDrawalDeclinded(account, initial_deposit):
+def test_NegativeWithdrawalAmount_WithDrawalDeclined(account, initial_deposit):
     ## try and withdraw a negative amount
     requested_amount = -1.0
     response = account.submit_withdrawal_request(requested_amount)
@@ -40,7 +40,6 @@ def test_NegativeWithdrawalAmount_WithDrawalDeclinded(account, initial_deposit):
 def test_PositiveDeposit_DepositApproved(account, initial_deposit):
 
     amount = 10.0
-
     response = account.submit_deposit_request(amount)
     assert response.result == DepositResult.CONFIRMED
     assert response.reason == None
@@ -49,7 +48,6 @@ def test_PositiveDeposit_DepositApproved(account, initial_deposit):
 def test_NegativeDeposit_DepositDeclined(account, initial_deposit):
     
     amount = 10.0
-
     response = account.submit_deposit_request(-1.0)
     assert response.result == DepositResult.DECLINED
     assert response.reason == DepositResponse.DeclinedReason.NEGATIVE_AMOUNT_DEPOSITED

@@ -1,4 +1,3 @@
-
 from datetime import datetime
 import pprint
 
@@ -7,11 +6,11 @@ class PolygonEquity:
 
     """
     Encapsulates Equity details as listed in the Polygon io docs.
-    A list of fields is given here: 
+    A list of fields is given here:
     https://polygon.io/docs/#get_v1_meta_symbols__symbol__company_anchor,
     be repeated below for convenience. The only fields we alter
-    from the polygon docs are 'listdate' and `updated'. 
-    
+    from the polygon docs are 'listdate' and `updated'.
+
     Example
     -------
 
@@ -64,14 +63,23 @@ class PolygonEquity:
     def __init__(self, raw_dict: dict):
 
         if "_raw" not in raw_dict.keys():
-            raise RuntimeError("Polygon equity constructor needs a dictionary with '_raw' as the only key.")
+            raise RuntimeError(
+                "Polygon equity constructor needs a dictionary with '_raw' as the only key."
+            )
         self.__dict__ = raw_dict["_raw"]
 
         ## Convert dates to datetime
-        self.listdate = datetime.strptime(self.listdate, '%Y-%m-%d') if self.listdate is not None else None
-        self.updated  = datetime.strptime(self.updated, '%m/%d/%Y') if self.updated is not None else None
+        self.listdate = (
+            datetime.strptime(self.listdate, "%Y-%m-%d")
+            if self.listdate is not None
+            else None
+        )
+        self.updated = (
+            datetime.strptime(self.updated, "%m/%d/%Y")
+            if self.updated is not None
+            else None
+        )
 
     def __repr__(self):
-        pp = pprint.PrettyPrinter(indent = 4)
+        pp = pprint.PrettyPrinter(indent=4)
         return pp.pformat(self.__dict__)
-

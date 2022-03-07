@@ -45,6 +45,10 @@ def test_broker_init(broker, initial_deposit):
     assert broker.all_positions == {}
     assert broker.all_orders == set()
 
+## Should be broken into three tests.
+## test_buy_order_fulfilled_with_sufficient_cash_balance.
+## test_position_opened_when_buy_order_fulfilled.
+## test_cash_withdrawn_from_cashaccount_with_successful_buy_order.
 def test_submit_buy_order(broker, buy_order, initial_deposit):
 
     broker.submit_order(buy_order)
@@ -62,7 +66,10 @@ def test_submit_buy_order(broker, buy_order, initial_deposit):
 
     order_cost = buy_order.quantity * broker.context.current_market_price(buy_order.symbol)
     assert abs(broker.cash_account.balance - (initial_deposit - order_cost)) < 1.0e-5
-
+ 
+## TODO test sell order fulfilled with sufficent balance
+## test short_position_opened_when_short_order_fulfilled.
+## test credit applied when short position opened.
 def test_submit_sell_order(broker, sell_order, initial_deposit):
 
     broker.submit_order(sell_order)

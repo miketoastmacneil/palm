@@ -11,11 +11,14 @@ from polygon import RESTClient
 from ..asset.equity import PolygonEquity
 from .polygon_eod import PolygonEOD
 
-def pull_polygon_eod(symbols,
-                        start_date: datetime,
-                        end_date: datetime, 
-                        api_key = None, 
-                        show_progress: bool = True):
+
+def pull_polygon_eod(
+    symbols,
+    start_date: datetime,
+    end_date: datetime,
+    api_key=None,
+    show_progress: bool = True,
+):
     ## TODO: Currently doesn't support getting datasets which don't have
     ## survivor bias. Should handle the case where we don't have the complete data.
     ## and fill it with NaN as a substitute for "unavailable".
@@ -29,22 +32,22 @@ def pull_polygon_eod(symbols,
     start_date: datetime, date from which to pull data.
     end_date: datetime, date to which to pull data.
     api_key: str, Polygon io api key, if none looks for
-        and environment variable named "POLYGON_IO_API_KEY", 
+        and environment variable named "POLYGON_IO_API_KEY",
         otherwise throws an error.
 
     Returns:
     --------
     eod_data: dict[DataFrame], dictionary of dataframes returned
         from polygon REST request.
-    
+
         The dictionary of dataframes is indexed by the symbols requested. The columns
         of each dataframe follow the convention from the polygon
         stock historical aggregates docs.
-        ('v', 'vw', 'o', 'c', 'h', 'l', 't', 'n') 
+        ('v', 'vw', 'o', 'c', 'h', 'l', 't', 'n')
 
         The only difference from the REST response is the `t` field is transformed
         from a Unix Msec timestamp to a datetime object.
-        
+
         If the historical record of the company is shorter than requested,
         the full available history is returned.
     """
@@ -55,26 +58,34 @@ def pull_polygon_eod(symbols,
         symbols = [symbols]
 
     if api_key is None:
-        environment_key = os.getenv('POLYGON_IO_API_KEY')
+        environment_key = os.getenv("POLYGON_IO_API_KEY")
         if environment_key is None:
-            raise RuntimeError("Polygon Api Key is not provided and cannot find environment variable: POLYGON_IO_API_KEY")
+            raise RuntimeError(
+                "Polygon Api Key is not provided and cannot find environment variable: POLYGON_IO_API_KEY"
+            )
         else:
             api_key = environment_key
 
     loader = tqdm(symbols) if show_progress else symbols
-    start_date = start_date.strftime('%Y-%m-%d')
-    end_date = end_date.strftime('%Y-%m-%d')
+    start_date = start_date.strftime("%Y-%m-%d")
+    end_date = end_date.strftime("%Y-%m-%d")
     eod_data = {}
     with RESTClient(api_key) as client:
         for symbol in loader:
-            response = client.stocks_equities_aggregates(symbol, 1, 'day', start_date, end_date)
-            if response.status == 'OK':
+            response = client.stocks_equities_aggregates(
+                symbol, 1, "day", start_date, end_date
+            )
+            if response.status == "OK":
                 eod_data[symbol] = pd.DataFrame(response.results)
                 ## Convert from unix millisecond time stamp to date and time.
-                eod_data[symbol]['datetime'] = eod_data[symbol]['t'].apply(lambda timestamp: datetime.fromtimestamp(timestamp/1000.0)+timedelta(hours = 8))
-                eod_data[symbol].index = pd.DatetimeIndex(eod_data[symbol]['datetime'])
+                eod_data[symbol]["datetime"] = eod_data[symbol]["t"].apply(
+                    lambda timestamp: datetime.fromtimestamp(timestamp / 1000.0)
+                    + timedelta(hours=8)
+                )
+                eod_data[symbol].index = pd.DatetimeIndex(eod_data[symbol]["datetime"])
 
     return PolygonEOD(eod_data)
+
 
 def trim_daily_eod_data(daily_eod: dict):
     """
@@ -93,12 +104,13 @@ def trim_daily_eod_data(daily_eod: dict):
 
     max_rows = get_max_rows(daily_eod)
     trimmed_eod = {}
-    has_max_rows = lambda OHLCV_data: len(OHLCV_data)==max_rows
+    has_max_rows = lambda OHLCV_data: len(OHLCV_data) == max_rows
     for symbol in daily_eod.keys():
         if has_max_rows(daily_eod[symbol]):
             trimmed_eod[symbol] = daily_eod[symbol]
 
     return trimmed_eod
+
 
 def get_max_rows(daily_eod: dict):
     """
@@ -110,13 +122,13 @@ def get_max_rows(daily_eod: dict):
     Returns
     ----------
     max_rows: int
-        - The maximum number of rows. 
+        - The maximum number of rows.
     """
 
     num_rows = {}
     for symbol in daily_eod.keys():
         N = len(daily_eod[symbol])
-        if (N not in num_rows.keys()):
+        if N not in num_rows.keys():
             num_rows[N] = 1
         else:
             num_rows[N] += 1
@@ -130,13 +142,15 @@ def get_max_rows(daily_eod: dict):
 
     return max_rows
 
+
 def get_first_symbol(dataframe_dict: dict):
     return list(dataframe_dict.keys())[0]
+
 
 def union_of_timestamps(dataframes: dict):
     """
     Gets the union of all time stamps which index the dataframes.
-    Example usage is creating price matrix for assets which 
+    Example usage is creating price matrix for assets which
     are missing values.
 
     Returns
@@ -148,7 +162,7 @@ def union_of_timestamps(dataframes: dict):
     union_indices = dataframes[first_symbol].index
 
     for symbol in dataframes.keys():
-        if (symbol == first_symbol):
+        if symbol == first_symbol:
             continue
         else:
             union_indices = union_indices.union(dataframes[symbol].index)
@@ -158,7 +172,7 @@ def union_of_timestamps(dataframes: dict):
 
 def all_indices_overlap(dataframes: dict):
     """
-    Verifies whether the indices in a set of dataframes 
+    Verifies whether the indices in a set of dataframes
     overlaps.
     """
     all_overlap = True
@@ -166,15 +180,16 @@ def all_indices_overlap(dataframes: dict):
     previous_indices = data_frames[first_symbol].index
 
     for symbol in dataframes.keys():
-        if (symbol == first_symbol):
+        if symbol == first_symbol:
             continue
         else:
-            current_indices = dataframes[symbol].index 
+            current_indices = dataframes[symbol].index
 
             all_overlap = all_overlap and (current_indices == previous_indices).all()
             previous_indices = current_indices
 
     return all_overlap
+
 
 def read_listings_from_json(equity_listing_filename: str):
     """
@@ -199,6 +214,6 @@ def read_listings_from_json(equity_listing_filename: str):
 
     equities = []
     for raw in data:
-        equities.append(PolygonEquity(raw)) 
+        equities.append(PolygonEquity(raw))
 
     return equities

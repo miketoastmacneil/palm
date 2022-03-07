@@ -1,4 +1,3 @@
-
 import json
 import os
 from glob import glob
@@ -10,9 +9,10 @@ from ..asset.equity import PolygonEquity
 Helper functions for loading or saving the PolygonEquity class.
 """
 
+
 def save_listings(listings: list, output_dir: str):
     """
-    Save a list of PolygonEquity objects (listings) to 
+    Save a list of PolygonEquity objects (listings) to
     a specified output directory. Each listing is written
     to its own json file.
 
@@ -23,7 +23,7 @@ def save_listings(listings: list, output_dir: str):
 
     Returns
     -------
-    None    
+    None
     """
 
     if not os.path.exists(output_dir):
@@ -37,22 +37,32 @@ def save_listings(listings: list, output_dir: str):
 
     return
 
+
 def save_listing(equity_listing: PolygonEquity, outfile_name: str):
     out_dict = dict(equity_listing.__dict__)
 
     ## Converts these dates to match whats in Polygon (see PolygonEquity)
-    out_dict["listdate"] = equity_listing.listdate.strftime("%Y-%m-%d") if equity_listing.listdate is not None else None
-    out_dict["updated"] = equity_listing.updated.strftime("%m/%d/%Y") if equity_listing.updated is not None else None
+    out_dict["listdate"] = (
+        equity_listing.listdate.strftime("%Y-%m-%d")
+        if equity_listing.listdate is not None
+        else None
+    )
+    out_dict["updated"] = (
+        equity_listing.updated.strftime("%m/%d/%Y")
+        if equity_listing.updated is not None
+        else None
+    )
 
     other = {}
-    other['_raw'] = out_dict
+    other["_raw"] = out_dict
 
-    with open(outfile_name, 'w') as outfile:
-        json.dump(other, outfile, indent = 4)
+    with open(outfile_name, "w") as outfile:
+        json.dump(other, outfile, indent=4)
 
     return
 
-def load_listings(listing_dir: str, symbols: list = None, get_all = False):
+
+def load_listings(listing_dir: str, symbols: list = None, get_all=False):
     """
     Load a set of listings, specified by symbols, from
     a directory containing listings written to a json file.
@@ -64,7 +74,7 @@ def load_listings(listing_dir: str, symbols: list = None, get_all = False):
 
     Returns
     -------
-    listings: list[PolygonEquity] 
+    listings: list[PolygonEquity]
     """
 
     all_listings = sorted(glob(os.path.join(listing_dir, "*.json")))
@@ -86,12 +96,13 @@ def load_listings(listing_dir: str, symbols: list = None, get_all = False):
 
     return listings
 
-def load_listing(listing_json_file:str):
 
-    if (not listing_json_file.endswith(".json")):
+def load_listing(listing_json_file: str):
+
+    if not listing_json_file.endswith(".json"):
         raise RuntimeError("load_listing expects a json file")
 
-    with open(listing_json_file, 'r') as infile:
+    with open(listing_json_file, "r") as infile:
         raw_dict = json.load(infile)
 
     return PolygonEquity(raw_dict)

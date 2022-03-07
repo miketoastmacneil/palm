@@ -1,4 +1,3 @@
-
 from enum import Enum
 import pprint
 from typing import Callable, Dict
@@ -7,8 +6,8 @@ from palm.utils.generate_id import generate_hex_id
 
 from ..orders.market_order import MarketOrder
 
-class Trade:
 
+class Trade:
     class Status(Enum):
         INACTIVE = 1
         ACTIVE = 2
@@ -44,12 +43,12 @@ class Trade:
 
             self._entry_orders.append(order)
 
-        ## By default, want to do all the selling before the buying. 
+        ## By default, want to do all the selling before the buying.
         sorted(self._entry_orders, key=lambda order: order.quantity)
         for order in self._entry_orders:
             broker.submit_order(order)
-         
-        self.status = Trade.Status.ACTIVE 
+
+        self.status = Trade.Status.ACTIVE
         self._initial_value = self.current_market_value()
 
         return
@@ -65,7 +64,7 @@ class Trade:
                 order = MarketOrder.Buy(symbol, abs(quantity))
             else:
                 continue
-            
+
             self._exit_orders.append(order)
 
         sorted(self._exit_orders, key=lambda order: order.quantity)
@@ -92,7 +91,7 @@ class Trade:
             value = 0.0
             for symbol in self._shares.keys():
                 quantity = self._shares[symbol]
-                value += self._context.current_market_price(symbol)*quantity
+                value += self._context.current_market_price(symbol) * quantity
             return value
         elif self.status == Trade.Status.COMPLETE:
             return self._exit_value - self._initial_value
@@ -101,11 +100,11 @@ class Trade:
 
     def profit_and_loss(self):
         if self.status == Trade.Status.INACTIVE:
-            return 0.0 
+            return 0.0
         if self.status == Trade.Status.ACTIVE:
-            return self.current_market_value()-self._initial_value
+            return self.current_market_value() - self._initial_value
         if self.status == Trade.Status.COMPLETE:
-            return self._exit_value- self._initial_value
+            return self._exit_value - self._initial_value
         else:
             raise RuntimeError("Trade Status not recognized.")
 
@@ -113,7 +112,7 @@ class Trade:
         return self.id == other.id
 
     def __repr__(self) -> str:
-        pp = pprint.PrettyPrinter(indent = 4)
+        pp = pprint.PrettyPrinter(indent=4)
         state = {
             "Status": self.status,
             "Initial Value": self._initial_value,
