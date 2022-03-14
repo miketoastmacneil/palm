@@ -19,21 +19,28 @@ is_close = (
 for time_event in filter(lambda event: is_close(event), backtest.events()):
     ## Same code here. That should be all thats needed.
     backtest.trader.liquidate_all_positions()
-    closing_prices = backtest.historical_data["Close"].to_numpy()
     t = time_event.date_index_since_start
+    previous_closing_prices = backtest.historical_data["Close"].to_numpy()[t - 1, :]
+    current_closing_prices = backtest._context.current_market_prices().to_numpy()
 
     returns_since_yesterday = (
-        closing_prices[t, :] - closing_prices[t - 1, :]
-    ) / closing_prices[t - 1, :]
+        current_closing_prices - previous_closing_prices
+    ) / previous_closing_prices
     percent_returns = returns_since_yesterday / np.sum(np.abs(returns_since_yesterday))
     median_return = np.median(percent_returns)
 
     order_quantity = dict()
     for i in range(len(returns_since_yesterday)):
-        amount_to_invest = -(percent_returns[i]) * backtest.trader.cash_balance
+        normalizer = np.sum(np.abs(percent_returns - median_return))
+        amount_to_invest = (
+            -(percent_returns[i] - median_return)
+            * backtest.trader.cash_balance
+            / normalizer
+        )
         order_quantity[symbol_list[i]] = int(
             round(
-                amount_to_invest / backtest.context.current_market_price(symbol_list[i])
+                amount_to_invest
+                / backtest._context.current_market_price(symbol_list[i])
             )
         )
 

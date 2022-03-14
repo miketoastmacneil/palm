@@ -48,7 +48,6 @@ class LongPosition(Position):
                     self.symbol, self.quantity, amount_to_decrease
                 )
             )
-
-        self.quantity -= amount_to_decrease
         if amount_to_decrease == self.quantity:
             self.set_to_closed()
+        self.quantity -= amount_to_decrease

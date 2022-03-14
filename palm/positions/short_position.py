@@ -47,6 +47,6 @@ class ShortPosition(Position):
                 )
             )
 
-        self.quantity -= amount_to_decrease
         if int(amount_to_decrease) == self.quantity:
             self.set_to_closed()
+        self.quantity -= amount_to_decrease

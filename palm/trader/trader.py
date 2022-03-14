@@ -8,7 +8,6 @@ class SimulatedTrader:
     """
     Handles the logic for submitting and closing out trades
     which are more complicated than a single asset.
-
     """
 
     def __init__(self, context: ContextObservable, initial_deposit):
@@ -25,10 +24,16 @@ class SimulatedTrader:
 
     def submit_trade(self, trade: Trade):
 
+        if type(trade) == dict:
+            trade = Trade(trade)
         trade.submit_entry_order(self.broker)
         self.open_trades.append(trade)
 
         return
+
+    @property
+    def cash_balance(self):
+        return self.broker.cash_account.balance
 
     def liquidate_all_positions(self):
 

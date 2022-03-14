@@ -79,7 +79,7 @@ class ContextEOD(ContextObservable):
     observable.subscribe(lambda time_event: print(time_event))
     """
 
-    def __init__(self, start_date: datetime, data_source: EquityEOD):
+    def __init__(self, data_source: EquityEOD, start_date: datetime = None):
         super(ContextEOD, self).__init__()
         self._data_source = data_source
 
@@ -87,7 +87,9 @@ class ContextEOD(ContextObservable):
         self._close = self._data_source["Close"]
         self._dates = self._data_source["Dates"]
 
-        self._current_date_index = (start_date - self._dates[0]).days
+        self._current_date_index = 0
+        if start_date is not None:
+            self._current_date_index = (start_date - self._dates[0]).days
         self._time_in_market_day = TimeInMarketDay.Opening
 
         T, _ = data_source.shape
@@ -96,17 +98,20 @@ class ContextEOD(ContextObservable):
         self._iterator_needs_to_update = False
 
     def current_market_price(self, symbol):
-        """
-        This is what most of the observables are monitoring.
-        Its not needed for the alpha model but this is
-        how each price is updated.
-        """
         t = self._current_date_index
         i = self._data_source.symbol_to_column_index[symbol]
         if self._time_in_market_day == TimeInMarketDay.Opening:
-            return self._open[t, i]
+            return self._open[symbol].iloc[t]
         elif self._time_in_market_day == TimeInMarketDay.Closing:
-            return self._close[t, i]
+            return self._close[symbol].iloc[t]
+
+    def current_market_prices(self):
+
+        t = self._current_date_index
+        if self._time_in_market_day == TimeInMarketDay.Opening:
+            return self._open.iloc[t]
+        elif self._time_in_market_day == TimeInMarketDay.Closing:
+            return self._close.iloc[t]
 
     def time_in_market_day(self):
         return self._time_in_market_day

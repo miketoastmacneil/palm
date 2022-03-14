@@ -1,12 +1,13 @@
 from turtle import pos
 from palm.broker.simulated_broker import SimulatedBroker
+from palm.data.equity_eod import EquityEOD
 from palm.orders.market_order import MarketOrder, MarketOrderStatus
 from palm.positions import Position, LongPosition, ShortPosition
 import pytest
 
 import pandas as pd
 
-from palm.data import PolygonEOD
+from palm.data import polygon_symbol_indexed_to_OHCLV_indexed
 from palm.context import ContextEOD
 
 
@@ -17,11 +18,11 @@ def eod_data():
     data["AAPL"] = pd.read_csv("sample_data/AAPL-Sample-Data.csv", index_col=0)
     data["MSFT"] = pd.read_csv("sample_data/MSFT-Sample-Data.csv", index_col=0)
 
-    return PolygonEOD(data)
+    return EquityEOD(polygon_symbol_indexed_to_OHCLV_indexed(data))
 
 
 @pytest.fixture
-def context(eod_data):
+def context(eod_data: EquityEOD):
     return ContextEOD(eod_data)
 
 
@@ -52,11 +53,7 @@ def test_broker_init(broker, initial_deposit):
     assert broker.all_orders == set()
 
 
-## Should be broken into three tests.
-## test_buy_order_fulfilled_with_sufficient_cash_balance.
-## test_position_opened_when_buy_order_fulfilled.
-## test_cash_withdrawn_from_cashaccount_with_successful_buy_order.
-def test_submit_buy_order(broker, buy_order, initial_deposit):
+def test_SufficientBalanceBuyOrderSubmitted_OrderFulFilled(broker, buy_order):
 
     broker.submit_order(buy_order)
     assert buy_order.status == MarketOrderStatus.CLOSED
@@ -64,11 +61,11 @@ def test_submit_buy_order(broker, buy_order, initial_deposit):
     assert buy_order.time_closed == broker.context.current_time()
     assert buy_order in broker.all_orders
     assert buy_order.failure_reason is None
-    assert (
-        abs(buy_order.avg_price - broker.context.current_market_price(buy_order.symbol))
-        < 1.0e-5
-    )
 
+
+def test_SufficientBalanceBuyOrderSubmitted_LongPositionOpened(broker, buy_order):
+
+    broker.submit_order(buy_order)
     position = broker.get_position(buy_order.symbol)
     assert position.side == Position.Side.LONG
     assert position.status == Position.Status.OPEN
@@ -77,31 +74,31 @@ def test_submit_buy_order(broker, buy_order, initial_deposit):
         == buy_order.quantity * broker.context.current_market_price(buy_order.symbol)
     )
 
+
+def test_SufficientBalanceBuyOrderSubmitted_CashAccountDecreasedByOrderCost(
+    broker, buy_order, initial_deposit
+):
+
+    broker.submit_order(buy_order)
     order_cost = buy_order.quantity * broker.context.current_market_price(
         buy_order.symbol
     )
     assert abs(broker.cash_account.balance - (initial_deposit - order_cost)) < 1.0e-5
 
 
-## TODO test sell order fulfilled with sufficent balance
-## test short_position_opened_when_short_order_fulfilled.
-## test credit applied when short position opened.
-def test_submit_sell_order(broker, sell_order, initial_deposit):
-
+### This should probably test if you have sufficient margin.
+def test_NewSellOrderSubmitted_OrderFulfilled(broker, sell_order):
     broker.submit_order(sell_order)
     assert sell_order.status == MarketOrderStatus.CLOSED
     assert sell_order.fulfilled == True
     assert sell_order.time_closed == broker.context.current_time()
     assert sell_order in broker.all_orders
     assert sell_order.failure_reason is None
-    assert (
-        abs(
-            sell_order.avg_price
-            - broker.context.current_market_price(sell_order.symbol)
-        )
-        < 1.0e-5
-    )
+    return
 
+
+def test_NewSellOrderSubmitted_ShortPositionOpened(broker, sell_order):
+    broker.submit_order(sell_order)
     position = broker.get_position(sell_order.symbol)
     assert position.side == Position.Side.SHORT
     assert position.status == Position.Status.OPEN
@@ -110,35 +107,33 @@ def test_submit_sell_order(broker, sell_order, initial_deposit):
         == -sell_order.quantity * broker.context.current_market_price(sell_order.symbol)
     )
 
+
+def test_NewSellOrderSubmitted_CreditApplied(broker, sell_order, initial_deposit):
+
+    broker.submit_order(sell_order)
     order_credit = sell_order.quantity * broker.context.current_market_price(
         sell_order.symbol
     )
     assert abs(broker.cash_account.balance - (initial_deposit + order_credit)) < 1.0e-5
 
 
-def test_increase_long_position(broker, buy_order):
+def test_TwoBuyOrdersSameQuantitySubmitted_LongPositionDoubled(broker, buy_order):
 
     broker.submit_order(buy_order)
-    position = broker.get_position(buy_order.symbol)
-    assert position.quantity == buy_order.quantity
-    assert position.status == Position.Status.OPEN
-
     new_buy = MarketOrder.Buy(buy_order.symbol, buy_order.quantity)
     broker.submit_order(new_buy)
+    position = broker.get_position(buy_order.symbol)
     assert position.quantity == int(2 * buy_order.quantity)
     assert position.status == Position.Status.OPEN
+    assert position.side == Position.Side.LONG
 
 
-def test_decrease_long_position(broker, buy_order, sell_order):
+def test_BuyOrderFollowedByASellOrderSameQuantity_LongPositionClosed(
+    broker, buy_order, sell_order
+):
 
     broker.submit_order(buy_order)
-    position = broker.get_position(buy_order.symbol)
-    assert position.quantity == buy_order.quantity
-    assert position.status == Position.Status.OPEN
-
     broker.submit_order(sell_order)
-    assert position.quantity == 0
-    assert position.status == Position.Status.CLOSED
 
     pos = broker.get_position(buy_order.symbol)
     assert pos is None
@@ -146,20 +141,19 @@ def test_decrease_long_position(broker, buy_order, sell_order):
     assert broker.portfolio_value() == broker.cash_account.balance
 
 
-def test_increase_short_position(broker, sell_order):
+def test_TwoSellOrdersSameQuantitySubmitted_ShortPositionDoubled(broker, sell_order):
 
     broker.submit_order(sell_order)
     position = broker.get_position(sell_order.symbol)
-    assert position.quantity == sell_order.quantity
-    assert position.status == Position.Status.OPEN
-
     new_sell = MarketOrder.Sell(sell_order.symbol, sell_order.quantity)
     broker.submit_order(new_sell)
+    position = broker.get_position(sell_order.symbol)
     assert position.quantity == int(2 * sell_order.quantity)
     assert position.status == Position.Status.OPEN
+    assert position.side == Position.Side.SHORT
 
 
-def test_decrease_short_position(broker, sell_order):
+def test_BuyOrderAfterSellOrderSameQuantity_ShortPositionClosed(broker, sell_order):
 
     broker.submit_order(sell_order)
     position = broker.get_position(sell_order.symbol)

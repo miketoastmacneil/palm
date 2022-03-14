@@ -2,7 +2,7 @@ import pytest
 
 import pandas as pd
 
-from palm.data import PolygonEOD
+from palm.data import EquityEOD, polygon_symbol_indexed_to_OHCLV_indexed
 from palm.context import ContextEOD, TimeInMarketDay
 from palm.trader import SimulatedTrader
 
@@ -16,12 +16,21 @@ def eod_data():
     data["AAPL"] = pd.read_csv("sample_data/AAPL-Sample-Data.csv", index_col=0)
     data["MSFT"] = pd.read_csv("sample_data/MSFT-Sample-Data.csv", index_col=0)
 
-    return PolygonEOD(data)
+    return EquityEOD(polygon_symbol_indexed_to_OHCLV_indexed(data))
 
 
 @pytest.fixture
 def context(eod_data):
-    return ContextEOD(eod_data)
+    return ContextEOD(eod_data, start_date=eod_data["Dates"][0])
+
+
+def test_OnConstruction_NoActiveOrClosedTrades(context):
+    initial_deposit = 10000
+
+    trader = SimulatedTrader(context, initial_deposit)
+
+    assert len(trader.open_trades) == 0
+    assert len(trader.closed_trades) == 0
 
 
 def test_one_update_workflow(context):

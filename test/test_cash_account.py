@@ -64,8 +64,6 @@ def test_PositiveDeposit_DepositApproved(account, initial_deposit):
 
 def test_NegativeDeposit_DepositDeclined(account, initial_deposit):
 
-    amount = 10.0
     response = account.submit_deposit_request(-1.0)
     assert response.result == DepositResult.DECLINED
     assert response.reason == DepositResponse.DeclinedReason.NEGATIVE_AMOUNT_DEPOSITED
-    assert abs(account.balance - (initial_deposit + amount)) < 1.0e-5

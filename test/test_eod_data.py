@@ -1,7 +1,7 @@
 import pytest
 
 import pandas as pd
-from palm.data import PolygonEOD
+from palm.data import polygon_symbol_indexed_to_OHCLV_indexed, EquityEOD
 
 
 @pytest.fixture
@@ -16,7 +16,7 @@ def eod_data():
 
 def test_polygon_eod(eod_data):
 
-    polygon_data = PolygonEOD(eod_data)
+    polygon_data = EquityEOD(polygon_symbol_indexed_to_OHCLV_indexed(eod_data))
     T, N = polygon_data.shape
     assert T == 178
     assert N == 2

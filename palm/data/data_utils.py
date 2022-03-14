@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 import json
-from tkinter.filedialog import Open
 from tqdm import tqdm
 import os
 
@@ -9,7 +8,6 @@ import pandas as pd
 
 from polygon import RESTClient
 
-from ..asset.equity import PolygonEquity
 from .equity_eod import EquityEOD
 
 
@@ -81,7 +79,8 @@ def pull_polygon_eod(
                 )
                 eod_data[symbol].index = pd.DatetimeIndex(eod_data[symbol]["datetime"])
 
-    return EquityEOD(polygon_symbol_indexed_to_OHCLV_indexed(eod_data) )
+    return EquityEOD(polygon_symbol_indexed_to_OHCLV_indexed(eod_data))
+
 
 def polygon_symbol_indexed_to_OHCLV_indexed(data: dict):
 
@@ -93,11 +92,11 @@ def polygon_symbol_indexed_to_OHCLV_indexed(data: dict):
     OHLCV_indexed["Volume"] = {}
     ## Open
     for symbol in data.keys():
-        OHLCV_indexed["Open"][symbol] = data[symbol]['o']
-        OHLCV_indexed["Close"][symbol] = data[symbol]['c']
-        OHLCV_indexed["High"][symbol] = data[symbol]['h']
-        OHLCV_indexed["Low"][symbol] = data[symbol]['l']
-        OHLCV_indexed["Volume"][symbol]  = data[symbol]['v']
+        OHLCV_indexed["Open"][symbol] = data[symbol]["o"]
+        OHLCV_indexed["Close"][symbol] = data[symbol]["c"]
+        OHLCV_indexed["High"][symbol] = data[symbol]["h"]
+        OHLCV_indexed["Low"][symbol] = data[symbol]["l"]
+        OHLCV_indexed["Volume"][symbol] = data[symbol]["v"]
 
     OHLCV_indexed["Open"] = pd.DataFrame(OHLCV_indexed["Open"])
     OHLCV_indexed["Close"] = pd.DataFrame(OHLCV_indexed["Close"])
@@ -106,6 +105,7 @@ def polygon_symbol_indexed_to_OHCLV_indexed(data: dict):
     OHLCV_indexed["Volume"] = pd.DataFrame(OHLCV_indexed["Volume"])
 
     return OHLCV_indexed
+
 
 def trim_daily_eod_data(daily_eod: dict):
     """
@@ -209,31 +209,3 @@ def all_indices_overlap(dataframes: dict):
             previous_indices = current_indices
 
     return all_overlap
-
-
-def read_listings_from_json(equity_listing_filename: str):
-    """
-    Reads a equity metadata from a json file and
-    returns a list of Polygon Equity Objects.
-
-    Parameters
-    ----------
-    listings_json_file: str
-        - Json file with raw representation of Polygon Equity
-
-    Returns
-    -------
-    listings: list[PolygonEquity]
-    """
-
-    if not equity_listing_filename.endswith(".json"):
-        raise RuntimeError("Need a json file for equity_listing_filename.")
-
-    with open(equity_listing_filename) as in_file:
-        data = json.load(in_file)
-
-    equities = []
-    for raw in data:
-        equities.append(PolygonEquity(raw))
-
-    return equities

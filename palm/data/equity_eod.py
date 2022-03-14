@@ -2,6 +2,7 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
+
 class EquityEOD:
     """
     EOD data is given as a collection of TxN matrices, one for each field:
@@ -10,13 +11,17 @@ class EquityEOD:
 
     def __init__(self, data):
         self._allowed_fields = ["Open", "Close", "High", "Low", "Volume"]
-        if not (self._allowed_fields==list(data.keys())):
-            raise ValueError("Data must be a dictionary of data frames with the fields: {}".format(self._allowed_fields))
+        if not (self._allowed_fields == list(data.keys())):
+            raise ValueError(
+                "Data must be a dictionary of data frames with the fields: {}".format(
+                    self._allowed_fields
+                )
+            )
 
         ## Add a validate dataset here.
         self._data = data
         self.symbols = sorted(set(self._data["Open"].columns))
-        self._dates = self._data["Open"].index
+        self._dates = pd.to_datetime(self._data["Open"].index)
 
         self._index_to_symbol = {}
         self._symbol_to_index = {}
@@ -52,12 +57,12 @@ class EquityEOD:
         Slices the data set from a start date up to,
         but not including, and end date.
         """
-        
+
         sliced_data = {}
         for field in self._allowed_fields:
             data_at_field = self._data[field]
             sliced_data[field] = data_at_field[data_at_field.index >= from_date]
-            sliced_data[field] = sliced_data[field][sliced_data[field].index < to_date] 
+            sliced_data[field] = sliced_data[field][sliced_data[field].index < to_date]
 
         return EquityEOD(sliced_data)
 
@@ -68,4 +73,3 @@ class EquityEOD:
     @property
     def symbol_to_column_index(self):
         return self._symbol_to_index
-
