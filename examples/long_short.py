@@ -46,6 +46,7 @@ for time_event in filter(lambda event: is_close(event), backtest.events()):
 
     backtest.trader.submit_trade(order_quantity)
 
+backtest.trader.liquidate_all_positions()
 plt.plot(backtest.portfolio_value())
 plt.plot(backtest.historical_data.close_prices())
 plt.show()

@@ -12,7 +12,6 @@ class Strategy:
     def on_update(self, historical_data, context, trader):
         pass
 
-
 class BacktestSession:
     def __init__(
         self,
