@@ -17,6 +17,6 @@ setup(
         "numpy==1.21.0",
         "pandas==1.4.0",
         "tqdm==4.62.3",
-        "polygon-api-client"
-    )
+        "polygon-api-client",
+    ),
 )

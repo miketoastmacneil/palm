@@ -1,7 +1,4 @@
-
-
 class ContextObservable:
-
     def __init__(self):
         self.observers = dict()
 

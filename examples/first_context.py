@@ -10,15 +10,30 @@ from palm.data.yahoo_eod import YahooEOD
 start_date = datetime(2019, 1, 1)
 end_date = datetime(2020, 10, 10)
 
-symbol_list = ['BAC', 'BK', 'C', 'CFG',
-                'CMA', 'COF', 'FITB', 'GS',
-                'JPM', 'KEY', 'MS',
-                'MTB', 'PBCT', 'PNC', 
-                'STT', 'USB', 'WFC', 'ZION']
+symbol_list = [
+    "BAC",
+    "BK",
+    "C",
+    "CFG",
+    "CMA",
+    "COF",
+    "FITB",
+    "GS",
+    "JPM",
+    "KEY",
+    "MS",
+    "MTB",
+    "PBCT",
+    "PNC",
+    "STT",
+    "USB",
+    "WFC",
+    "ZION",
+]
 
-src_data = pdr.data.DataReader(symbol_list, 'yahoo', start_date, end_date)
+src_data = pdr.data.DataReader(symbol_list, "yahoo", start_date, end_date)
 
 eod_data = YahooEOD(src_data)
-context = ContextEOD(eod_data) 
+context = ContextEOD(eod_data)
 
 broker = SimulatedBroker(context, 10000)

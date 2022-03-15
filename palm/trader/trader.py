@@ -1,21 +1,20 @@
-
 from ..context.context_observable import ContextObservable
 from ..broker.simulated_broker import SimulatedBroker
 from ..utils.generate_id import generate_hex_id
 from ..trades.trade import Trade
 
+
 class SimulatedTrader:
     """
     Handles the logic for submitting and closing out trades
     which are more complicated than a single asset.
-
     """
 
     def __init__(self, context: ContextObservable, initial_deposit):
 
         self.open_trades = []
         self.closed_trades = []
-        self._context = context 
+        self._context = context
         self.broker = SimulatedBroker(context, initial_deposit)
         self._id = generate_hex_id()
 
@@ -25,10 +24,16 @@ class SimulatedTrader:
 
     def submit_trade(self, trade: Trade):
 
+        if type(trade) == dict:
+            trade = Trade(trade)
         trade.submit_entry_order(self.broker)
         self.open_trades.append(trade)
 
         return
+
+    @property
+    def cash_balance(self):
+        return self.broker.cash_account.balance
 
     def liquidate_all_positions(self):
 

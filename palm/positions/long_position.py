@@ -1,7 +1,7 @@
-
 from ..context.daily_bar_context import ContextEOD
 from .position import Position
 from ..orders.market_order import MarketOrder, MarketOrderType
+
 
 class LongPosition(Position):
     """
@@ -11,7 +11,9 @@ class LongPosition(Position):
     """
 
     def __init__(self, context: ContextEOD, order: MarketOrder):
-        super(LongPosition, self).__init__(context) ## assigns context and opening time.
+        super(LongPosition, self).__init__(
+            context
+        )  ## assigns context and opening time.
 
         if order.type != MarketOrderType.BUY:
             raise ValueError("Long position requires a buy order.")
@@ -19,16 +21,19 @@ class LongPosition(Position):
         self.symbol = order.symbol
         self.quantity = int(order.quantity)
         if self.quantity < 0:
-            raise ValueError("Order quantity needs to be positive to open a long position.")
+            raise ValueError(
+                "Order quantity needs to be positive to open a long position."
+            )
         self.side = Position.Side.LONG
-    
+
     @property
     def current_dollar_value(self):
-        return self._context.current_market_price(self.symbol)*self.quantity
+        return self._context.current_market_price(self.symbol) * self.quantity
 
     @current_dollar_value.setter
     def current_dollar_value(self):
         return
+
     def increase(self, additional_quantity):
         self.quantity += additional_quantity
 
@@ -36,10 +41,13 @@ class LongPosition(Position):
 
         amount_to_decrease = int(amount_to_decrease)
         if amount_to_decrease > self.quantity:
-            raise ValueError("""
+            raise ValueError(
+                """
                 Position in {} is {}, cannot decrease position by {}.
-            """.format(self.symbol, self.quantity, amount_to_decrease))
-
-        self.quantity -= amount_to_decrease
+            """.format(
+                    self.symbol, self.quantity, amount_to_decrease
+                )
+            )
         if amount_to_decrease == self.quantity:
             self.set_to_closed()
+        self.quantity -= amount_to_decrease

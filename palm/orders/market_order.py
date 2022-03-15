@@ -1,21 +1,22 @@
-
 from enum import Enum
 import pprint
 
 from palm.utils.generate_id import generate_hex_id
 
+
 class MarketOrderType(Enum):
     BUY = 1
     SELL = 2
 
+
 class MarketOrderStatus(Enum):
     NOT_SUBMITTED = 3
     SUBMITTED = 4
-    CLOSED = 2 
+    CLOSED = 2
     FAILED = 5
 
-class MarketOrder:
 
+class MarketOrder:
     @staticmethod
     def Buy(symbol, quantity):
         return MarketOrder(MarketOrderType.BUY, symbol, quantity)
@@ -45,8 +46,8 @@ class MarketOrder:
 
     def set_as_submitted(self, time_submitted):
         self.status = MarketOrderStatus.SUBMITTED
-        self.time_submitted =  time_submitted
-    
+        self.time_submitted = time_submitted
+
     def set_as_fulfilled(self, time, avg_price):
         self.status = MarketOrderStatus.CLOSED
         self.fulfilled = True
@@ -76,7 +77,7 @@ class MarketOrder:
         return hash(self.id)
 
     def __repr__(self) -> str:
-        pp = pprint.PrettyPrinter(indent = 4)
+        pp = pprint.PrettyPrinter(indent=4)
         state = {
             "Order Id": self.id,
             "Status": self.status,
@@ -86,6 +87,6 @@ class MarketOrder:
             "Fulfilled": self.fulfilled,
             "Time Submitted": self.time_submitted,
             "Average Price": self.avg_price,
-            "Time Closed": self.time_closed
+            "Time Closed": self.time_closed,
         }
         return pp.pformat(state)

@@ -1,7 +1,7 @@
-
 from ..context.daily_bar_context import ContextEOD
 from .position import Position
 from ..orders.market_order import MarketOrder, MarketOrderType
+
 
 class ShortPosition(Position):
     """
@@ -11,18 +11,22 @@ class ShortPosition(Position):
     """
 
     def __init__(self, context: ContextEOD, order: MarketOrder):
-        super(ShortPosition, self).__init__(context) ## assigns context and opening time.
+        super(ShortPosition, self).__init__(
+            context
+        )  ## assigns context and opening time.
 
         if order.type != MarketOrderType.SELL:
             raise ValueError("Opening a Short position requires a Sell order.")
         self.order = order
         self.symbol = order.symbol
-        self.quantity = int(order.quantity) ## In a short, quantity is owed, so kept as negative
+        self.quantity = int(
+            order.quantity
+        )  ## In a short, quantity is owed, so kept as negative
         self.side = Position.Side.SHORT
 
     @property
     def current_dollar_value(self):
-        return -1.0*self._context.current_market_price(self.symbol)*self.quantity
+        return -1.0 * self._context.current_market_price(self.symbol) * self.quantity
 
     @current_dollar_value.setter
     def current_dollar_value(self):
@@ -35,10 +39,14 @@ class ShortPosition(Position):
 
         amount_to_decrease = int(amount_to_decrease)
         if amount_to_decrease > self.quantity:
-            raise ValueError("""
+            raise ValueError(
+                """
                 Position in {} is {}, cannot decrease position by {}.
-            """.format(self.symbol, self.quantity, amount_to_decrease))
+            """.format(
+                    self.symbol, self.quantity, amount_to_decrease
+                )
+            )
 
-        self.quantity -= amount_to_decrease
         if int(amount_to_decrease) == self.quantity:
             self.set_to_closed()
+        self.quantity -= amount_to_decrease

@@ -1,17 +1,20 @@
-
+from datetime import datetime
 from enum import Enum
+import numpy as np
 import pprint
 
 from ..data import EquityEOD
 from .context_observable import ContextObservable
 
+
 class TimeInMarketDay(Enum):
     Opening = 1
-    Closing = 2 
+    Closing = 2
+
 
 class EODEvent:
     """
-    End of Day time events for simulation, provides the 
+    End of Day time events for simulation, provides the
     use with what date it is and whether it is opening or closing.
     In backtesting "date_index_since_start" is provided for convenience.
     """
@@ -23,25 +26,27 @@ class EODEvent:
         self.date_index_since_start = date_index_since_start
 
     def __repr__(self) -> str:
-        pp = pprint.PrettyPrinter(indent = 4)
+        pp = pprint.PrettyPrinter(indent=4)
         state = {
-            "Time In Market Day": "Opening" if self.time_in_market_day==TimeInMarketDay.Opening else "Closing",
+            "Time In Market Day": "Opening"
+            if self.time_in_market_day == TimeInMarketDay.Opening
+            else "Closing",
             "Date Index Since Start": self.date_index_since_start,
-            "Date": self.date.date()
+            "Date": self.date.date(),
         }
         return pp.pformat(state)
 
 
 class ContextEOD(ContextObservable):
     """
-    Object used to generate events for 
-    a historical dataset as well as being 
+    Object used to generate events for
+    a historical dataset as well as being
     the single source of truth for current and
     previous price information.
 
     Iterator Example:
     -----------------
-    from datetime import datetime 
+    from datetime import datetime
     from palm.data.data_utils import pull_data_from_polygon
     from palm.context.daily_bar_context import ContextEOD
 
@@ -58,7 +63,7 @@ class ContextEOD(ContextObservable):
 
     Subscribable Example:
     ---------------------
-    from datetime import datetime 
+    from datetime import datetime
     from palm.data.data_utils import pull_data_from_polygon
     from palm.context.daily_bar_context import ContextEOD
 
@@ -75,34 +80,39 @@ class ContextEOD(ContextObservable):
     observable.subscribe(lambda time_event: print(time_event))
     """
 
-
-    def __init__(self, data_source: EquityEOD):
+    def __init__(self, data_source: EquityEOD, start_date: datetime = None):
         super(ContextEOD, self).__init__()
-        self._data_source        = data_source
+        self._data_source = data_source
+
+        self._open = self._data_source["Open"]
+        self._close = self._data_source["Close"]
+        self._dates = self._data_source["Dates"]
+
         self._current_date_index = 0
+        if start_date is not None:
+            self._current_date_index = np.where(self._dates.date == start_date.date())[0][0]
         self._time_in_market_day = TimeInMarketDay.Opening
 
-        self._open  = self._data_source.open_prices()
-        self._close = self._data_source.close_prices() 
-        self._dates = self._data_source.dates()
-
         T, _ = data_source.shape
-        self._max_date_index = T-1
+        self._max_date_index = T - 1
 
         self._iterator_needs_to_update = False
 
     def current_market_price(self, symbol):
-        """
-        This is what most of the observables are monitoring.
-        Its not needed for the alpha model but this is
-        how each price is updated.
-        """
         t = self._current_date_index
         i = self._data_source.symbol_to_column_index[symbol]
         if self._time_in_market_day == TimeInMarketDay.Opening:
-            return self._open[t, i]
+            return self._open[symbol].iloc[t]
         elif self._time_in_market_day == TimeInMarketDay.Closing:
-            return self._close[t, i]
+            return self._close[symbol].iloc[t]
+
+    def current_market_prices(self):
+
+        t = self._current_date_index
+        if self._time_in_market_day == TimeInMarketDay.Opening:
+            return self._open.iloc[t]
+        elif self._time_in_market_day == TimeInMarketDay.Closing:
+            return self._close.iloc[t]
 
     def time_in_market_day(self):
         return self._time_in_market_day
@@ -112,6 +122,10 @@ class ContextEOD(ContextObservable):
 
     def current_date(self):
         return self._dates[self._current_date_index]
+
+    @property
+    def historical_data(self):
+        return self._historical_data
 
     ## TODO, this needs to give the right time
     ## To confirm when orders are submitted
@@ -124,7 +138,7 @@ class ContextEOD(ContextObservable):
         """
         if not self.can_still_update():
             return
-        
+
         if self._time_in_market_day == TimeInMarketDay.Opening:
             self._time_in_market_day = TimeInMarketDay.Closing
         else:
@@ -138,7 +152,7 @@ class ContextEOD(ContextObservable):
         "end" of the iterator
         """
         at_the_last_day = self._current_date_index == self._max_date_index
-        at_closing_time = self._time_in_market_day == TimeInMarketDay.Closing 
+        at_closing_time = self._time_in_market_day == TimeInMarketDay.Closing
 
         its_closing_time_on_the_last_day = at_closing_time and at_the_last_day
 
@@ -146,7 +160,7 @@ class ContextEOD(ContextObservable):
             return False
         else:
             return True
-    
+
     def __iter__(self):
 
         while self.can_still_update():
@@ -156,21 +170,25 @@ class ContextEOD(ContextObservable):
                 event = EODEvent(
                     self._dates[self.current_date_index()],
                     self._time_in_market_day,
-                    self.current_date_index())
+                    self.current_date_index(),
+                )
                 self._iterator_needs_to_update = True
             else:
                 self.update()
                 event = EODEvent(
                     self._dates[self.current_date_index()],
                     self._time_in_market_day,
-                    self.current_date_index())
+                    self.current_date_index(),
+                )
             yield event
 
     def __repr__(self) -> str:
-        pp = pprint.PrettyPrinter(indent = 4)
+        pp = pprint.PrettyPrinter(indent=4)
         state = {
-            "Time In Market Day": "Opening" if self._time_in_market_day==TimeInMarketDay.Opening else "Closing",
+            "Time In Market Day": "Opening"
+            if self._time_in_market_day == TimeInMarketDay.Opening
+            else "Closing",
             "Current Time Index": self._current_date_index,
-            "Current Date in Simulation": self.current_date().date()
+            "Current Date in Simulation": self.current_date().date(),
         }
         return pp.pformat(state)

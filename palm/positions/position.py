@@ -5,10 +5,11 @@ import pprint
 from ..context.daily_bar_context import ContextEOD
 from ..utils.generate_id import generate_hex_id
 
+
 class Position:
     """
     A position is the holding of a quantity of an asset.
-    It is the result of a successful order 
+    It is the result of a successful order
     and the current market value is given by the context.
     """
 
@@ -36,7 +37,7 @@ class Position:
         else:
             self.have_already_been_closed = True
         self.time_closed = self._context.current_time()
-        self.status      = Position.Status.CLOSED
+        self.status = Position.Status.CLOSED
         return
 
     def __eq__(self, other):
@@ -54,7 +55,7 @@ class Position:
         pass
 
     def __repr__(self) -> str:
-        pp = pprint.PrettyPrinter(indent = 4)
+        pp = pprint.PrettyPrinter(indent=4)
         state = {
             "Position Id": self.id,
             "Side": self.side,

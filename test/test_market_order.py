@@ -2,7 +2,8 @@ import pytest
 
 from palm.orders import MarketOrder, MarketOrderStatus, MarketOrderType
 
-def test_legal_init():
+
+def test_PostiveIntegerQuantity_OrderCreated():
     order = MarketOrder.Buy("MSFT", 1)
 
     assert order.status == MarketOrderStatus.NOT_SUBMITTED
@@ -13,18 +14,17 @@ def test_legal_init():
     assert order.failure_reason == None
     assert order.avg_price == None
 
-def test_illegal_init():
+
+def test_NegativeIntegerQuantity_ValueErrorRaised():
     with pytest.raises(ValueError):
         illegal_order = MarketOrder.Buy("MSFT", -1)
 
     with pytest.raises(ValueError):
         illegal_order = MarketOrder.Sell("MSFT", -1)
 
-def test_equatable():
 
-    order = MarketOrder.Buy("MSFT",1)
-    assert order==order
+def test_TwoDifferentOrdersSameSymbolSameAmount_NotEqual():
 
-    second_similar_order = MarketOrder.Buy("MSFT",1)
-    assert second_similar_order != order 
-    
+    order = MarketOrder.Buy("MSFT", 1)
+    second_similar_order = MarketOrder.Buy("MSFT", 1)
+    assert second_similar_order != order
