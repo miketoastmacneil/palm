@@ -88,6 +88,7 @@ class SimulatedBroker:
         if order.type == MarketOrderType.BUY:
             cost = current_price * order.quantity
             response = self._cash_account.submit_withdrawal_request(cost)
+            print(response.reason)
             if response.result == WithdrawalResult.APPROVED:
                 position = LongPosition(self._context, order)
             else:

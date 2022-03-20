@@ -11,6 +11,9 @@ class EquityEOD:
 
     def __init__(self, data):
         self._allowed_fields = ["Open", "Close", "High", "Low", "Volume"]
+        self._allowed_return_types = ["numpy", "dataframe"]
+        self._return_type = "numpy"
+
         if not (self._allowed_fields == list(data.keys())):
             raise ValueError(
                 "Data must be a dictionary of data frames with the fields: {}".format(
@@ -50,7 +53,26 @@ class EquityEOD:
                 )
             )
 
-        return self._data[key]
+        if self.return_type == "numpy":
+            return self._data[key].to_numpy()
+        elif self.return_type == "dataframe":
+            return self._data[key]
+        else: 
+            return
+
+    @property
+    def return_type(self):
+        return self._return_type
+
+    @return_type.setter
+    def return_type(self, new_value):
+        if new_value not in self._allowed_return_types:
+            raise ValueError(f""" 
+                Return type must be one of {self._allowed_return_types}, 
+                received {new_value}.
+            """)
+        else:
+            self._return_type = new_value
 
     def slice(self, from_date: datetime, to_date: datetime):
         """
