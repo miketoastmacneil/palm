@@ -15,7 +15,7 @@ class DepositResult(Enum):
 class WithdrawalResponse:
     class DeclinedReason(Enum):
         INSUFFICIENT_FUNDS = 1
-        NEGATIVE_AMOUNT_REQUESTED = 1
+        NEGATIVE_AMOUNT_REQUESTED = 2
 
     def __init__(self, result: WithdrawalResult, reason: DeclinedReason = None):
         self.result = result

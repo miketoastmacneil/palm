@@ -20,8 +20,8 @@ for time_event in filter(lambda event: is_close(event), backtest.events()):
     ## Same code here. That should be all thats needed.
     backtest.trader.liquidate_all_positions()
     t = time_event.date_index_since_start
-    previous_closing_prices = backtest.historical_data["Close"].to_numpy()[t - 1, :]
-    current_closing_prices = backtest._context.current_market_prices().to_numpy()
+    previous_closing_prices = backtest.historical_data["Close"][t - 1, :]
+    current_closing_prices = backtest._context.current_market_prices()
 
     returns_since_yesterday = (
         current_closing_prices - previous_closing_prices

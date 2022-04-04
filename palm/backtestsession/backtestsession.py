@@ -4,7 +4,6 @@ from ..context import ContextEOD, EODEvent
 from ..data import pull_polygon_eod
 from ..trader import SimulatedTrader
 
-
 class Strategy:
     def init_context(self) -> ContextEOD:
         pass
@@ -60,9 +59,21 @@ class BacktestSession:
         if len(self._strategies) == 0:
             raise RuntimeError("Need at least one strategy to run a backtest.")
 
+        self.portfolio_history = []
+
         for time_event in self.events():  ## trader will react to updates
             windowed_historical_data = self.historical_data
             for strategy in self._strategies:
-                strategy.on_update(
-                    windowed_historical_data, self._context, self._trader
-                )
+                has_time_filters = hasattr(strategy, "time_filters")
+                keep_time_event = True
+                if has_time_filters:
+                    for filter in strategy.time_filters:
+                        keep_time_event = keep_time_event and filter(time_event)
+                if keep_time_event:
+                    strategy.on_update(
+                        windowed_historical_data, self._context, self._trader
+                    )
+                else:
+                    continue
+
+            self.portfolio_history.append(self._trader.broker.portfolio_value())

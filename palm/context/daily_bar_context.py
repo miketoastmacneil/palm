@@ -89,8 +89,10 @@ class ContextEOD(ContextObservable):
         self._dates = self._data_source["Dates"]
 
         self._current_date_index = 0
+        self._start_date_index = 0
         if start_date is not None:
             self._current_date_index = np.where(self._dates.date == start_date.date())[0][0]
+            self._start_date_index = self._current_date_index
         self._time_in_market_day = TimeInMarketDay.Opening
 
         T, _ = data_source.shape
@@ -102,20 +104,23 @@ class ContextEOD(ContextObservable):
         t = self._current_date_index
         i = self._data_source.symbol_to_column_index[symbol]
         if self._time_in_market_day == TimeInMarketDay.Opening:
-            return self._open[symbol].iloc[t]
+            return self._open[t,i]
         elif self._time_in_market_day == TimeInMarketDay.Closing:
-            return self._close[symbol].iloc[t]
+            return self._close[t,i]
 
     def current_market_prices(self):
 
         t = self._current_date_index
         if self._time_in_market_day == TimeInMarketDay.Opening:
-            return self._open.iloc[t]
+            return self._open[t,:]
         elif self._time_in_market_day == TimeInMarketDay.Closing:
-            return self._close.iloc[t]
+            return self._close[t,:]
 
     def time_in_market_day(self):
         return self._time_in_market_day
+
+    def date_index_since_start(self):
+        return self._current_date_index - self._start_date_index
 
     def current_date_index(self):
         return self._current_date_index
