@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 
+from palm.data.equity_eod import EquityEOD
+
 from ..context import ContextEOD, EODEvent
 from ..data import pull_polygon_eod
 from ..trader import SimulatedTrader
@@ -14,21 +16,30 @@ class Strategy:
 class BacktestSession:
     def __init__(
         self,
-        symbols,
         start_date: datetime,
         end_date: datetime,
         look_back_period: timedelta,
         initial_capital=10000.0,
+        symbols = None,
+        dataset: EquityEOD = None
     ):
 
-        self._symbols = symbols
+        if (symbols is None) and (dataset is None):
+            RuntimeError("""
+                Backtest session requires either a set of symbols to 
+                pull, or a dataset to iterate over. Got:
+                    Symbols: {},
+                    Dataset: {}
+            """.format(symbols, dataset))
+
+        self._symbols = symbols if symbols is not None else dataset.symbols
         self._start_date = start_date
         self._end_date = end_date
         self._look_back = look_back_period
         self._initial_capital = initial_capital
         self._strategies: list[Strategy] = []
 
-        self._historical_data = pull_polygon_eod(
+        self._historical_data = dataset if dataset is not None else pull_polygon_eod(
             symbols, start_date - look_back_period, end_date
         )
         self._context = ContextEOD(self._historical_data, start_date)
