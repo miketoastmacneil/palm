@@ -71,6 +71,11 @@ def pull_polygon_eod(
                 symbol, 1, "day", start_date, end_date
             )
             if response.status == "OK":
+                try:
+                    result = response.results
+                except AttributeError:
+                    print(f"No results found for {symbol}, continuing")
+                    break
                 eod_data[symbol] = pd.DataFrame(response.results)
                 ## Convert from unix millisecond time stamp to date and time.
                 eod_data[symbol]["datetime"] = eod_data[symbol]["t"].apply(
