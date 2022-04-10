@@ -6,12 +6,14 @@ from ..context import ContextEOD, EODEvent
 from ..data import pull_polygon_eod
 from ..trader import SimulatedTrader
 
+
 class Strategy:
     def init_context(self) -> ContextEOD:
         pass
 
     def on_update(self, historical_data, context, trader):
         pass
+
 
 class BacktestSession:
     def __init__(
@@ -20,17 +22,21 @@ class BacktestSession:
         end_date: datetime,
         look_back_period: timedelta,
         initial_capital=10000.0,
-        symbols = None,
-        dataset: EquityEOD = None
+        symbols=None,
+        dataset: EquityEOD = None,
     ):
 
         if (symbols is None) and (dataset is None):
-            RuntimeError("""
+            RuntimeError(
+                """
                 Backtest session requires either a set of symbols to 
                 pull, or a dataset to iterate over. Got:
                     Symbols: {},
                     Dataset: {}
-            """.format(symbols, dataset))
+            """.format(
+                    symbols, dataset
+                )
+            )
 
         self._symbols = symbols if symbols is not None else dataset.symbols
         self._start_date = start_date
@@ -39,8 +45,10 @@ class BacktestSession:
         self._initial_capital = initial_capital
         self._strategies: list[Strategy] = []
 
-        self._historical_data = dataset if dataset is not None else pull_polygon_eod(
-            symbols, start_date - look_back_period, end_date
+        self._historical_data = (
+            dataset
+            if dataset is not None
+            else pull_polygon_eod(symbols, start_date - look_back_period, end_date)
         )
         self._context = ContextEOD(self._historical_data, start_date)
         self._trader = SimulatedTrader(self._context, self._initial_capital)
