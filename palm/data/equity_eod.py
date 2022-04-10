@@ -57,7 +57,7 @@ class EquityEOD:
             return self._data[key].to_numpy()
         elif self.return_type == "dataframe":
             return self._data[key]
-        else: 
+        else:
             return
 
     @property
@@ -67,10 +67,12 @@ class EquityEOD:
     @return_type.setter
     def return_type(self, new_value):
         if new_value not in self._allowed_return_types:
-            raise ValueError(f""" 
+            raise ValueError(
+                f""" 
                 Return type must be one of {self._allowed_return_types}, 
                 received {new_value}.
-            """)
+            """
+            )
         else:
             self._return_type = new_value
 
