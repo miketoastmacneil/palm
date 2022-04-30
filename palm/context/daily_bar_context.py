@@ -84,9 +84,9 @@ class ContextEOD(ContextObservable):
         super(ContextEOD, self).__init__()
         self._data_source = data_source
 
-        self._open = self._data_source["Open"]
-        self._close = self._data_source["Close"]
-        self._dates = self._data_source["Dates"]
+        self._open = self._data_source["open"]
+        self._close = self._data_source["close"]
+        self._dates = self._data_source["dates"]
 
         self._current_date_index = 0
         self._start_date_index = 0

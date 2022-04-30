@@ -90,23 +90,23 @@ def pull_polygon_eod(
 def polygon_symbol_indexed_to_OHCLV_indexed(data: dict):
 
     OHLCV_indexed = {}
-    OHLCV_indexed["Open"] = {}
-    OHLCV_indexed["Close"] = {}
-    OHLCV_indexed["High"] = {}
-    OHLCV_indexed["Low"] = {}
-    OHLCV_indexed["Volume"] = {}
+    OHLCV_indexed["open"] = {}
+    OHLCV_indexed["close"] = {}
+    OHLCV_indexed["high"] = {}
+    OHLCV_indexed["low"] = {}
+    OHLCV_indexed["volume"] = {}
     ## Open
     for symbol in data.keys():
-        OHLCV_indexed["Open"][symbol] = data[symbol]["o"]
-        OHLCV_indexed["Close"][symbol] = data[symbol]["c"]
-        OHLCV_indexed["High"][symbol] = data[symbol]["h"]
-        OHLCV_indexed["Low"][symbol] = data[symbol]["l"]
-        OHLCV_indexed["Volume"][symbol] = data[symbol]["v"]
+        OHLCV_indexed["open"][symbol] = data[symbol]["o"]
+        OHLCV_indexed["close"][symbol] = data[symbol]["c"]
+        OHLCV_indexed["high"][symbol] = data[symbol]["h"]
+        OHLCV_indexed["low"][symbol] = data[symbol]["l"]
+        OHLCV_indexed["volume"][symbol] = data[symbol]["v"]
 
-    OHLCV_indexed["Open"] = pd.DataFrame(OHLCV_indexed["Open"])
-    OHLCV_indexed["Close"] = pd.DataFrame(OHLCV_indexed["Close"])
-    OHLCV_indexed["High"] = pd.DataFrame(OHLCV_indexed["High"])
-    OHLCV_indexed["Low"] = pd.DataFrame(OHLCV_indexed["Low"])
-    OHLCV_indexed["Volume"] = pd.DataFrame(OHLCV_indexed["Volume"])
+    OHLCV_indexed["open"] = pd.DataFrame(OHLCV_indexed["open"])
+    OHLCV_indexed["close"] = pd.DataFrame(OHLCV_indexed["close"])
+    OHLCV_indexed["high"] = pd.DataFrame(OHLCV_indexed["high"])
+    OHLCV_indexed["low"] = pd.DataFrame(OHLCV_indexed["low"])
+    OHLCV_indexed["volume"] = pd.DataFrame(OHLCV_indexed["volume"])
 
     return OHLCV_indexed

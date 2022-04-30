@@ -6,7 +6,6 @@ import pytest
 import pandas as pd
 from palm.data import EquityEOD, polygon_symbol_indexed_to_OHCLV_indexed
 
-
 @pytest.fixture
 def eod_data():
 
@@ -27,7 +26,7 @@ def test_init(eod_data):
 
 
 def test_InitWithStartDateOneDayAfterFirst_DateIndexIsOne(eod_data):
-    context = ContextEOD(eod_data, start_date=eod_data["Dates"][0])
+    context = ContextEOD(eod_data, start_date=eod_data["dates"][0])
     assert context.current_date_index() == 0
 
 
@@ -46,7 +45,7 @@ def test_OneTimeStep_MovesFromOpeningToClosing(eod_data):
 
 
 def test_AtFinalTimeStep_CanUpdateIsFalse(eod_data):
-    context = ContextEOD(eod_data, start_date=eod_data["Dates"][0])
+    context = ContextEOD(eod_data, start_date=eod_data["dates"][0])
     second_last_date = context._max_date_index - 1
     for i in range(second_last_date * 2):
         context.update()
