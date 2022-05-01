@@ -6,6 +6,7 @@ import pytest
 import pandas as pd
 from palm.data import EquityEOD, polygon_symbol_indexed_to_OHCLV_indexed
 
+
 @pytest.fixture
 def eod_data():
 

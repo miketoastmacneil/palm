@@ -4,6 +4,7 @@ import pandas as pd
 
 equity_eod_fields = ["open", "close", "high", "low", "volume"]
 
+
 class EquityEOD:
     """
     EOD data is given as a collection of TxN matrices, one for each field:
