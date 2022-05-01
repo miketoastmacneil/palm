@@ -1,8 +1,7 @@
-from turtle import pos
 from palm.broker.simulated_broker import SimulatedBroker
 from palm.data.equity_eod import EquityEOD
 from palm.orders.market_order import MarketOrder, MarketOrderStatus
-from palm.positions import Position, LongPosition, ShortPosition
+from palm.positions import Position
 import pytest
 
 import pandas as pd
@@ -45,13 +44,11 @@ def sell_order():
 def broker(context, initial_deposit):
     return SimulatedBroker(context, initial_deposit)
 
-
 def test_broker_init(broker, initial_deposit):
 
     assert broker.cash_account.balance == initial_deposit
     assert broker.all_positions == {}
     assert broker.all_orders == set()
-
 
 def test_SufficientBalanceBuyOrderSubmitted_OrderFulFilled(broker, buy_order):
 

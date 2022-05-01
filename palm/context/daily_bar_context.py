@@ -80,21 +80,27 @@ class ContextEOD(ContextObservable):
     observable.subscribe(lambda time_event: print(time_event))
     """
 
-    def __init__(self, data_source: EquityEOD, start_date: datetime = None):
+    def __init__(self, data_source: EquityEOD, start_date: datetime = None, start_index: int = None):
         super(ContextEOD, self).__init__()
         self._data_source = data_source
 
-        self._open = self._data_source["Open"]
-        self._close = self._data_source["Close"]
-        self._dates = self._data_source["Dates"]
+        self._open = self._data_source["open"]
+        self._close = self._data_source["close"]
+        self._dates = self._data_source["dates"]
 
         self._current_date_index = 0
         self._start_date_index = 0
+
+        ## TODO, this doesn't guard against the user choosing a
+        ## non-business day by accident
         if start_date is not None:
             self._current_date_index = np.where(self._dates.date == start_date.date())[
                 0
             ][0]
             self._start_date_index = self._current_date_index
+        if start_index is not None:
+            self._start_date_index = start_index
+            self._current_date_index = self._start_date_index
         self._time_in_market_day = TimeInMarketDay.Opening
 
         T, _ = data_source.shape
@@ -199,3 +205,5 @@ class ContextEOD(ContextObservable):
             "Current Date in Simulation": self.current_date().date(),
         }
         return pp.pformat(state)
+
+

@@ -2,6 +2,8 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
+equity_eod_fields = ["open", "close", "high", "low", "volume"]
+
 
 class EquityEOD:
     """
@@ -10,7 +12,7 @@ class EquityEOD:
     """
 
     def __init__(self, data):
-        self._allowed_fields = ["Open", "Close", "High", "Low", "Volume"]
+        self._allowed_fields = equity_eod_fields
         self._allowed_return_types = ["numpy", "dataframe"]
         self._return_type = "numpy"
 
@@ -23,8 +25,8 @@ class EquityEOD:
 
         ## Add a validate dataset here.
         self._data = data
-        self.symbols = sorted(set(self._data["Open"].columns))
-        self._dates = pd.to_datetime(self._data["Open"].index)
+        self.symbols = sorted(set(self._data["open"].columns))
+        self._dates = pd.to_datetime(self._data["open"].index)
 
         self._index_to_symbol = {}
         self._symbol_to_index = {}
@@ -43,7 +45,7 @@ class EquityEOD:
         if type(key) != str:
             raise ValueError("Data needs a string key")
 
-        if key == "Dates":
+        if key == "dates":
             return self._dates
 
         if key not in self._allowed_fields:

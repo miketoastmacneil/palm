@@ -21,7 +21,7 @@ def eod_data():
 
 @pytest.fixture
 def context(eod_data):
-    return ContextEOD(eod_data, start_date=eod_data["Dates"][0])
+    return ContextEOD(eod_data, start_date=eod_data["dates"][0])
 
 
 def test_OnConstruction_NoActiveOrClosedTrades(context):
