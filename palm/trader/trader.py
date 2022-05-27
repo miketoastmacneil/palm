@@ -21,8 +21,9 @@ def weights_as_a_percentage_of_total_portfolio_value(broker: SimulatedBroker):
 
 
 class SimulatedTraderSnapshot:
-    def __init__(self, position_snapshot):
+    def __init__(self, position_snapshot, portfolio_value):
         self.positions = position_snapshot
+        self.portfolio_value = portfolio_value
 
 class SimulatedTrader:
     """
@@ -101,6 +102,8 @@ class SimulatedTrader:
     @property
     def state(self):
         positions = {key:self.broker.all_positions[key].state for key in self.broker.all_positions}
+        portfolio_value = self.broker.portfolio_value()
         return SimulatedTraderSnapshot(
-            positions
+            positions,
+            portfolio_value
         )
