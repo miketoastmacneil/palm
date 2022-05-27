@@ -11,10 +11,10 @@ class EquityEOD:
     "Open", "Close", "High", "Low", "Volume".
     """
 
-    def __init__(self, data):
+    def __init__(self, data, return_type="pandas"):
         self._allowed_fields = equity_eod_fields
-        self._allowed_return_types = ["numpy", "dataframe"]
-        self._return_type = "numpy"
+        self._allowed_return_types = ["numpy", "pandas"]
+        self._return_type = return_type
 
         if not (self._allowed_fields == list(data.keys())):
             raise ValueError(
@@ -23,10 +23,12 @@ class EquityEOD:
                 )
             )
 
-        ## Add a validate dataset here.
+        ## Add a validate dataset here. Should check all the dates agree?
         self._data = data
-        self.symbols = sorted(set(self._data["open"].columns))
-        self._dates = pd.to_datetime(self._data["open"].index)
+        self.symbols = self._data["open"].columns
+        for field in equity_eod_fields:
+            self._data[field].index = pd.to_datetime(self._data[field].index).date
+        self._dates = pd.to_datetime(self._data["open"].index).date
 
         self._index_to_symbol = {}
         self._symbol_to_index = {}
@@ -41,12 +43,33 @@ class EquityEOD:
 
         return
 
+    @property
+    def dates(self):
+        return self._dates
+
+    @property
+    def open(self):
+        return self["open"]
+
+    @property
+    def close(self):
+        return self["close"]
+
+    @property
+    def high(self):
+        return self["high"]
+
+    @property
+    def low(self):
+        return self["low"]
+
+    @property
+    def volume(self):
+        return self["volume"]
+
     def __getitem__(self, key: str):
         if type(key) != str:
             raise ValueError("Data needs a string key")
-
-        if key == "dates":
-            return self._dates
 
         if key not in self._allowed_fields:
             raise ValueError(
@@ -57,10 +80,15 @@ class EquityEOD:
 
         if self.return_type == "numpy":
             return self._data[key].to_numpy()
-        elif self.return_type == "dataframe":
+        elif self.return_type == "pandas":
             return self._data[key]
         else:
             return
+
+    def __len__(self):
+        T, N = self.shape
+        return T
+
 
     @property
     def return_type(self):
@@ -83,6 +111,8 @@ class EquityEOD:
         Slices the data set from a start date up to,
         but not including, and end date.
         """
+        if from_date>=to_date:
+            return None
 
         sliced_data = {}
         for field in self._allowed_fields:

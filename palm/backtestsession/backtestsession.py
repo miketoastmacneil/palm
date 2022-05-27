@@ -2,17 +2,24 @@ from datetime import datetime
 from functools import reduce
 from pandas.tseries.offsets import BDay
 
-from palm.data.equity_eod import EquityEOD
-
+from ..data import EquityEOD
 from ..context import ContextEOD
-from ..data import pull_polygon_eod
 from ..trader import SimulatedTrader
 
 
+## The strategy is responsible for filtering the time events
+## including if there is a look_back.
 class Strategy:
+    def __init__(self) -> None:
+        self.look_back = 0
+
     def on_update(self, historical_data, context, trader):
         pass
 
+    def user_set_a_look_back(self):
+        return
+
+    ## If symbols are set by the dataset, why does it matter with the dataset?
     def user_set_symbols_correctly(self):
         has_symbols = hasattr(self, "symbols")
         if not has_symbols:
@@ -62,40 +69,35 @@ class Strategy:
 
         return (True, "")
 
+    def trade_on_this_event(self, time_event):
+        if not hasattr(self, "time_filters"):
+            return True 
+        else:
+            keep_time_event = True
+            for filter in self.time_filters:
+                filtered = filter(time_event)
+                if type(filtered) is not bool:
+                    raise ValueError(
+                        f"""Return value of time filter needs to be boolean. Got return value: {filtered},
+                    from time filter:{filter}."""
+                    )
+                keep_time_event = keep_time_event and filter(time_event)
+            return keep_time_event
+
 
 class BacktestSubscribeSession:
-
     def __init__(
         self,
         strategy: Strategy,
         eod_data: EquityEOD,
-        look_back_days: int = 30,
         initial_capital=10000.0,
     ):
-        ## Check the strategy first.
-        valid, failure_reason = self._validate_strategy(strategy)
-        if not valid:
-            raise ValueError(failure_reason)
-
         self._initial_capital = initial_capital
         self._strategy: Strategy = strategy
+        self._symbols = eod_data.symbols
+        self._historical_data = eod_data
 
-        self._symbols = strategy.symbols
-
-        historical_data_has_strategy_symbols, error_message = (
-            self._strategy_symbols_contained_in_historical_data(
-                self._symbols, eod_data 
-            )
-        )
-        if historical_data_has_strategy_symbols:
-            self._historical_data = eod_data
-        else:
-            raise ValueError(error_message)
-
-        self._look_back_period = BDay(look_back_days)
-        self._context = ContextEOD(self._historical_data, start_index = look_back_days)
-        self._start_date = self._context.current_date()
-
+        self._context = ContextEOD(eod_data)
         self._trader = SimulatedTrader(self._context, initial_capital)
 
         self._has_run = False
@@ -105,36 +107,42 @@ class BacktestSubscribeSession:
         if self._has_run:
             raise RuntimeError("Backtest already run, exiting.")
 
-        self.results = []
+        results = []
 
-        for time_event in self.events():
-            windowed_historical_data = self._historical_data.slice(
-                self._start_date - self._look_back, self._context.current_date()
-            )
-            if self._strategy.trade_on_this_time_event(time_event):
-                self._strategy.on_update(
-                    windowed_historical_data, self._context, self._trader
+        for time_event in filter(self._strategy.trade_on_this_event, self._context):
+            ## strategy is responsible for filtering the time 
+            ## events, we provide all historical data available. 
+            ## Unless we're told otherwise.
+            windowed_historical_data = None
+            if time_event.date_index_since_start > 0:
+                windowed_historical_data = self._historical_data.slice(
+                    time_event.date - BDay(self._strategy.look_back),
+                    time_event.date,
                 )
+            self._strategy.on_update(
+                windowed_historical_data, self._context, self._trader
+            )
+            results.append(self._trader.state)
 
         self._has_run = True
+
+        return results
 
     def _validate_strategy(self, strategy: Strategy):
         symbols_set_correctly, message = strategy.user_set_symbols_correctly()
         return symbols_set_correctly, message
 
-    def _events(self):
-        self._context.__iter__()
-        return
-
-    def _sliced_historical_data(self):
-        return self._historical_data.slice(
-            self._start_date - self._look_back, self._context.current_date()
-        )
     def _strategy_symbols_contained_in_historical_data(self, symbols, data):
 
         data_symbols = set(data.symbols)
-        all_contained = reduce(lambda current_bool, element: current_bool and (element in data_symbols), symbols, True)
-        error_message = "" if all_contained else "Historical data doesn't contain all symbols needed for strategy."
+        all_contained = reduce(
+            lambda current_bool, element: current_bool and (element in data_symbols),
+            symbols,
+            True,
+        )
+        error_message = (
+            ""
+            if all_contained
+            else "Historical data doesn't contain all symbols needed for strategy."
+        )
         return (all_contained, error_message)
-
-        

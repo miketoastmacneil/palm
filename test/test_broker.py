@@ -44,11 +44,13 @@ def sell_order():
 def broker(context, initial_deposit):
     return SimulatedBroker(context, initial_deposit)
 
+
 def test_broker_init(broker, initial_deposit):
 
     assert broker.cash_account.balance == initial_deposit
     assert broker.all_positions == {}
     assert broker.all_orders == set()
+
 
 def test_SufficientBalanceBuyOrderSubmitted_OrderFulFilled(broker, buy_order):
 

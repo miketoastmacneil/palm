@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from enum import Enum
 import pprint
+from tracemalloc import Snapshot
 
 from ..context.daily_bar_context import ContextEOD
 from ..utils.generate_id import generate_hex_id
@@ -40,6 +41,10 @@ class Position:
         self.status = Position.Status.CLOSED
         return
 
+    @property
+    def state(self):
+        return Position.Snapshot(self.side, self.symbol, self.quantity, self.current_dollar_value)
+
     def __eq__(self, other):
         return self.id == other.id
 
@@ -65,3 +70,20 @@ class Position:
             "Status": self.status,
         }
         return pp.pformat(state)
+
+    class Snapshot:
+        def __init__(self, side, symbol, quantity, current_dollar_value):
+            self.side = side
+            self.symbol = symbol
+            self.quantity = quantity
+            self.current_dollar_value = current_dollar_value
+
+        def __repr__(self) -> str:
+            pp = pprint.PrettyPrinter(indent=4)
+            state = {
+                "Side": self.side,
+                "Symbol": self.symbol,
+                "Quantity": self.quantity,
+                "Market Value": self.current_dollar_value,
+            }
+            return pp.pformat(state)

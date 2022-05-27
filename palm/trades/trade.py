@@ -6,6 +6,7 @@ from palm.utils.generate_id import generate_hex_id
 
 from ..orders.market_order import MarketOrder
 
+
 class Trade:
     class Status(Enum):
         INACTIVE = 1

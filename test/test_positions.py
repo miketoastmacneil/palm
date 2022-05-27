@@ -1,3 +1,4 @@
+from tracemalloc import Snapshot
 from turtle import pos
 from palm.positions.long_position import LongPosition
 from palm.positions.position import Position
@@ -15,11 +16,9 @@ from palm.context import ContextEOD
 def buy_order():
     return MarketOrder.Buy("MSFT", 1)
 
-
 @pytest.fixture
 def sell_order():
     return MarketOrder.Sell("MSFT", 1)
-
 
 @pytest.fixture
 def eod_data():
@@ -30,11 +29,9 @@ def eod_data():
 
     return EquityEOD(polygon_symbol_indexed_to_OHCLV_indexed(data))
 
-
 @pytest.fixture
 def context(eod_data):
     return ContextEOD(eod_data)
-
 
 def test_BuyOrder_LongPositionConstructed(context, buy_order):
 
@@ -47,13 +44,11 @@ def test_BuyOrder_LongPositionConstructed(context, buy_order):
     assert position.order == buy_order
     assert position.have_already_been_closed == False
 
-
 def test_LongPositionIncreased_QuantityIncreased(context, buy_order):
     position = LongPosition(context, buy_order)
 
     position.increase(1)
     assert position.quantity == 2
-
 
 def test_LongPositionDecreased_QuantityDecreased(context, buy_order):
 
@@ -61,14 +56,12 @@ def test_LongPositionDecreased_QuantityDecreased(context, buy_order):
     position.decrease(1)
     assert position.quantity == 0
 
-
 def test_LongPositionDecreasedToZero_StatusSetToClosed(context, buy_order):
 
     position = LongPosition(context, buy_order)
     position.decrease(1)
     assert position.quantity == 0
     assert position.status == position.Status.CLOSED
-
 
 def test_SellOrder_ShortPositionConstructed(context, sell_order):
 
@@ -80,13 +73,11 @@ def test_SellOrder_ShortPositionConstructed(context, sell_order):
     assert position.order == sell_order
     assert position.have_already_been_closed == False
 
-
 def test_ShortPositionIncreased_QuantityIncreased(context, sell_order):
 
     position = ShortPosition(context, sell_order)
     position.increase(1)
     assert position.quantity == 2
-
 
 def test_ShortPositionDecreased_QuantityDecreased(context, sell_order):
 
@@ -94,10 +85,18 @@ def test_ShortPositionDecreased_QuantityDecreased(context, sell_order):
     position.decrease(1)
     assert position.quantity == 0
 
-
 def test_ShortPositionDecreasedToZero_StatusSetToClosed(context, sell_order):
 
     position = ShortPosition(context, sell_order)
     position.decrease(1)
     assert position.quantity == 0
     assert position.status == position.Status.CLOSED
+
+def test_PositionDecreased_SnapshotRemainsUnchanged(context, buy_order):
+    
+    position = LongPosition(context, buy_order)
+    snapshot = position.state
+    quantity = snapshot.quantity
+
+    position.decrease(1)
+    snapshot.quantity == quantity

@@ -27,7 +27,7 @@ def test_init(eod_data):
 
 
 def test_InitWithStartDateOneDayAfterFirst_DateIndexIsOne(eod_data):
-    context = ContextEOD(eod_data, start_date=eod_data["dates"][0])
+    context = ContextEOD(eod_data)
     assert context.current_date_index() == 0
 
 
@@ -46,7 +46,7 @@ def test_OneTimeStep_MovesFromOpeningToClosing(eod_data):
 
 
 def test_AtFinalTimeStep_CanUpdateIsFalse(eod_data):
-    context = ContextEOD(eod_data, start_date=eod_data["dates"][0])
+    context = ContextEOD(eod_data)
     second_last_date = context._max_date_index - 1
     for i in range(second_last_date * 2):
         context.update()

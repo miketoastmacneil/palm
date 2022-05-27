@@ -32,7 +32,7 @@ class EODEvent:
             if self.time_in_market_day == TimeInMarketDay.Opening
             else "Closing",
             "Date Index Since Start": self.date_index_since_start,
-            "Date": self.date.date(),
+            "Date": self.date,
         }
         return pp.pformat(state)
 
@@ -80,13 +80,18 @@ class ContextEOD(ContextObservable):
     observable.subscribe(lambda time_event: print(time_event))
     """
 
-    def __init__(self, data_source: EquityEOD, start_date: datetime = None, start_index: int = None):
+    def __init__(
+        self,
+        data_source: EquityEOD,
+        start_date: datetime = None,
+        start_index: int = None,
+    ):
         super(ContextEOD, self).__init__()
-        self._data_source = data_source
+        self._data = data_source
 
-        self._open = self._data_source["open"]
-        self._close = self._data_source["close"]
-        self._dates = self._data_source["dates"]
+        self._open = self._data["open"].to_numpy()
+        self._close = self._data["close"].to_numpy()
+        self._dates = self._data.dates
 
         self._current_date_index = 0
         self._start_date_index = 0
@@ -110,7 +115,7 @@ class ContextEOD(ContextObservable):
 
     def current_market_price(self, symbol):
         t = self._current_date_index
-        i = self._data_source.symbol_to_column_index[symbol]
+        i = self._data.symbol_to_column_index[symbol]
         if self._time_in_market_day == TimeInMarketDay.Opening:
             return self._open[t, i]
         elif self._time_in_market_day == TimeInMarketDay.Closing:
@@ -202,8 +207,6 @@ class ContextEOD(ContextObservable):
             if self._time_in_market_day == TimeInMarketDay.Opening
             else "Closing",
             "Current Time Index": self._current_date_index,
-            "Current Date in Simulation": self.current_date().date(),
+            "Current Date in Simulation": self.current_date(),
         }
         return pp.pformat(state)
-
-
