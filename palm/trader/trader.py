@@ -21,9 +21,10 @@ def weights_as_a_percentage_of_total_portfolio_value(broker: SimulatedBroker):
 
 
 class SimulatedTraderSnapshot:
-    def __init__(self, position_snapshot, portfolio_value):
+    def __init__(self, position_snapshot, portfolio_value, cash_balance):
         self.positions = position_snapshot
         self.portfolio_value = portfolio_value
+        self.cash_balance = cash_balance
 
 class SimulatedTrader:
     """
@@ -54,6 +55,10 @@ class SimulatedTrader:
         return
 
     def rebalance_to_weights(self, target_weights):
+        """
+        Targets are expcected to be an N+1 vector where the 
+        final entry the amount to be allocated to cash.
+        """
 
         symbol_list = self._context._data.symbols
         broker_weights = weights_as_a_percentage_of_total_portfolio_value(self.broker)
@@ -103,7 +108,9 @@ class SimulatedTrader:
     def state(self):
         positions = {key:self.broker.all_positions[key].state for key in self.broker.all_positions}
         portfolio_value = self.broker.portfolio_value()
+        cash = self.broker.cash_account.balance
         return SimulatedTraderSnapshot(
             positions,
-            portfolio_value
+            portfolio_value,
+            cash
         )
