@@ -3,6 +3,8 @@ from enum import Enum
 import pprint
 from tracemalloc import Snapshot
 
+from ..orders.market_order import MarketOrder, MarketOrderType
+
 from ..context.daily_bar_context import ContextEOD
 from ..utils.generate_id import generate_hex_id
 
@@ -22,7 +24,15 @@ class Position:
         LONG = 1
         SHORT = 2
 
-    def __init__(self, context: ContextEOD):
+    @staticmethod
+    def from_order(context: ContextEOD, order: MarketOrder):
+        quantity = order.quantity
+        if order.type == MarketOrderType.SELL:
+            quantity = int(-1.0 * quantity)
+
+        return Position(context, order.symbol, quantity)
+
+    def __init__(self, context: ContextEOD, symbol: int, quantity: int):
 
         self._context = context
         self.time_opened = context.current_time()
@@ -31,6 +41,9 @@ class Position:
         self.status = Position.Status.OPEN
         self.time_closed = None
         self.have_already_been_closed: bool = False
+
+        self.symbol = symbol
+        self.quantity = quantity 
 
     def set_to_closed(self):
         if self.have_already_been_closed:
@@ -42,8 +55,19 @@ class Position:
         return
 
     @property
+    def current_dollar_value(self):
+        return self._context.current_market_price(self.symbol) * self.quantity
+
+    @property
     def state(self):
         return Position.Snapshot(self.side, self.symbol, self.quantity, self.current_dollar_value)
+
+    @property
+    def side(self):
+        if self.quantity <= 0.0:
+            return Position.Side.SHORT
+        else:
+            return Position.Side.LONG
 
     def __eq__(self, other):
         return self.id == other.id
@@ -51,13 +75,11 @@ class Position:
     def __hash__(self) -> int:
         return hash(str(self.id))
 
-    @abstractmethod
     def increase(self, amount):
-        pass
+        self.quantity += int(amount)
 
-    @abstractmethod
     def decrease(self, amount):
-        pass
+        self.quantity -= amount
 
     def __repr__(self) -> str:
         pp = pprint.PrettyPrinter(indent=4)

@@ -1,14 +1,12 @@
-from datetime import datetime
 from functools import reduce
 from pandas.tseries.offsets import BDay
+
+from ..context.daily_bar_context import TimeInMarketDay
 
 from ..data import EquityEOD
 from ..context import ContextEOD
 from ..trader import SimulatedTrader
 
-
-## The strategy is responsible for filtering the time events
-## including if there is a look_back.
 class Strategy:
     def __init__(self) -> None:
         self.look_back = 0
@@ -110,19 +108,19 @@ class BacktestSubscribeSession:
         results = []
 
         for time_event in filter(self._strategy.trade_on_this_event, self._context):
-            ## strategy is responsible for filtering the time 
-            ## events, we provide all historical data available. 
-            ## Unless we're told otherwise.
-            windowed_historical_data = None
-            if time_event.date_index_since_start > 0:
-                windowed_historical_data = self._historical_data.slice(
-                    time_event.date - BDay(self._strategy.look_back),
-                    time_event.date,
+            if self._strategy.trade_on_this_event(time_event):    
+                windowed_historical_data = None
+                if time_event.date_index_since_start > 0:
+                    windowed_historical_data = self._historical_data.slice(
+                        time_event.date - BDay(self._strategy.look_back),
+                        time_event.date,
+                    )
+                self._strategy.on_update(
+                    windowed_historical_data, self._context, self._trader
                 )
-            self._strategy.on_update(
-                windowed_historical_data, self._context, self._trader
-            )
-            results.append(self._trader.state)
+            ## Only update snapshot on close
+            if time_event.time_in_market_day == TimeInMarketDay.Close:
+                results.append(self._trader.state)
 
         self._has_run = True
 

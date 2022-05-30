@@ -147,7 +147,7 @@ def test_TwoSellOrdersSameQuantitySubmitted_ShortPositionDoubled(broker, sell_or
     new_sell = MarketOrder.Sell(sell_order.symbol, sell_order.quantity)
     broker.submit_order(new_sell)
     position = broker.get_position(sell_order.symbol)
-    assert position.quantity == int(2 * sell_order.quantity)
+    assert position.quantity == int(-1.0 * 2 * sell_order.quantity)
     assert position.status == Position.Status.OPEN
     assert position.side == Position.Side.SHORT
 
@@ -156,7 +156,7 @@ def test_BuyOrderAfterSellOrderSameQuantity_ShortPositionClosed(broker, sell_ord
 
     broker.submit_order(sell_order)
     position = broker.get_position(sell_order.symbol)
-    assert position.quantity == sell_order.quantity
+    assert position.quantity == int(-1.0 * sell_order.quantity)
     assert position.status == Position.Status.OPEN
 
     new_buy = MarketOrder.Buy(sell_order.symbol, sell_order.quantity)

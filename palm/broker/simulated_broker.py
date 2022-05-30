@@ -1,9 +1,7 @@
-from ..utils.generate_id import generate_hex_id
-from ..positions import Position, LongPosition, ShortPosition
+from ..positions import Position
 from .cash_account import CashAccount, DepositResult, WithdrawalResult
 from ..orders import MarketOrder, MarketOrderType
 from ..context import ContextEOD
-
 
 class SimulatedBroker:
     def __init__(self, context: ContextEOD, initial_deposit: float, margin=2.0):
@@ -18,7 +16,12 @@ class SimulatedBroker:
 
         order.set_as_submitted(self._context.current_time())
         self._orders.add(order)
-        self._process_order_at_current_price(order)
+        if order.type == MarketOrderType.BUY:
+            self._handle_buy_order(order)
+        elif order.type == MarketOrderType.SELL:
+            self._handle_sell_order(order)
+        else:
+            ValueError("Order type not recognized {}".format(order))
 
         return
 
@@ -73,128 +76,46 @@ class SimulatedBroker:
 
         return cash_value + positions_value
 
-    def _process_order_at_current_price(self, order: MarketOrder):
+    def _handle_buy_order(self, order: MarketOrder):
+
+        current_price = self._context.current_market_price(order.symbol)
+        cost = current_price * order.quantity
+        withdrawal_response = self._cash_account.submit_withdrawal_request(cost)
+
+        if withdrawal_response.result == WithdrawalResult.APPROVED:
+            order.set_as_fulfilled(self._context.current_time(), current_price)
+            self._update_position(order)
+        else:
+            order.set_as_failed(withdrawal_response.reason)
+            return 
+
+        return
+
+    def _handle_sell_order(self, order: MarketOrder):
+        current_price = self._context.current_market_price(order.symbol)
+        credit = current_price * order.quantity
+        deposit_response = self._cash_account.submit_deposit_request(credit)
+        if deposit_response.result == DepositResult.CONFIRMED:
+            order.set_as_fulfilled(self._context.current_time(), current_price)
+            self._update_position(order)
+        else:
+            order.set_as_failed(deposit_response.reason)
+            return
+        
+    def _update_position(self, order):
 
         position = self.get_position(order.symbol)
         if position is None:
-            self._open_position(order)
-        else:
-            self._modify_position(order, position)
-
-    def _open_position(self, order: MarketOrder):
-
-        position = None
-        current_price = self._context.current_market_price(order.symbol)
-        if order.type == MarketOrderType.BUY:
-            cost = current_price * order.quantity
-            response = self._cash_account.submit_withdrawal_request(cost)
-            print(response.reason)
-            if response.result == WithdrawalResult.APPROVED:
-                position = LongPosition(self._context, order)
-            else:
-                order.set_as_failed(self._context.current_time())
-                return
-        if order.type == MarketOrderType.SELL:
-            credit = self._context.current_market_price(order.symbol) * order.quantity
-            response = self._cash_account.submit_deposit_request(credit)
-            if response.result == DepositResult.CONFIRMED:
-                position = ShortPosition(self._context, order)
-            else:
-                order.set_as_failed(self._context.current_time())
-                return
-
-        if position is not None:
-            order.set_as_fulfilled(self._context.current_time(), current_price)
-            self._positions_map[position.symbol] = position
-
-    def _modify_position(self, order: MarketOrder, position: Position):
-
-        if (order.type == MarketOrderType.BUY) and (
-            position.side == Position.Side.LONG
-        ):
-            self._handle_increase_long_position(order, position)
-
-        if (order.type == MarketOrderType.SELL) and (
-            position.side == Position.Side.LONG
-        ):
-            self._handle_decrease_long_position(order, position)
-
-        if (order.type == MarketOrderType.BUY) and (
-            position.side == Position.Side.SHORT
-        ):
-            self._handle_decrease_short_position(order, position)
-
-        if (order.type == MarketOrderType.SELL) and (
-            position.side == Position.Side.SHORT
-        ):
-            self._handle_increase_short_position(order, position)
-
-        return
-
-    def _handle_increase_long_position(self, order: MarketOrder, position):
-
-        current_price = self._context.current_market_price(order.symbol)
-        cost = current_price * order.quantity
-        response = self._cash_account.submit_withdrawal_request(cost)
-        if response.result == WithdrawalResult.APPROVED:
-            position.increase(order.quantity)
-            order.set_as_fulfilled(self.context.current_time(), current_price)
-        else:
-            order.set_as_failed(response.reason)
+            new_position = Position.from_order(self._context, order)
+            self._positions_map[order.symbol] = new_position
             return
-
-    def _handle_decrease_long_position(
-        self, order: MarketOrder, position: LongPosition
-    ):
-
-        if order.quantity > position.quantity:
-            raise ValueError("Order to sell exceeds number of shares.")
-        current_price = self._context.current_market_price(order.symbol)
-        credit = current_price * order.quantity
-        response = self._cash_account.submit_deposit_request(credit)
-        if response.result == DepositResult.CONFIRMED:
-            if order.quantity == position.quantity:
-                position.decrease(order.quantity)
-                position.set_to_closed()
-                del self._positions_map[position.symbol]
-            else:
-                position.decrease(order.quantity)
-            order.set_as_fulfilled(self.context.current_time(), current_price)
         else:
-            order.set_as_failed(response.reason)
+            if order.type == MarketOrderType.SELL:
+                position.decrease(order.quantity)
+            elif order.type == MarketOrderType.BUY:
+                position.increase(order.quantity)
+
+        if position.quantity == 0:
+            position.set_to_closed()
+            del self._positions_map[order.symbol]
         return
-
-    def _handle_increase_short_position(self, order, position):
-
-        current_price = self._context.current_market_price(order.symbol)
-        credit = current_price * order.quantity
-        response = self._cash_account.submit_deposit_request(credit)
-        if response.result == DepositResult.CONFIRMED:
-            position.increase(order.quantity)
-            order.set_as_fulfilled(self.context.current_time(), current_price)
-        else:
-            order.set_as_failed(response.reason)
-
-    def _handle_decrease_short_position(self, order, position):
-
-        if order.quantity > position.quantity:
-            raise ValueError(
-                """
-                Order to decrease short position is buying too many shares.
-                Liquidate the position and open a new long position.
-            """
-            )
-        current_price = self._context.current_market_price(order.symbol)
-        cost = current_price * order.quantity
-        response = self._cash_account.submit_withdrawal_request(cost)
-        if response.result == WithdrawalResult.APPROVED:
-            if order.quantity == position.quantity:
-                position.decrease(order.quantity)
-                position.set_to_closed()
-                del self._positions_map[order.symbol]
-            else:
-                position.decrease(order.quantity)
-            order.set_as_fulfilled(self.context.current_time(), current_price)
-        else:
-            order.set_as_failed(response.reason)
-            return

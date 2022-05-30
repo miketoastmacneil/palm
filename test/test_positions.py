@@ -1,8 +1,6 @@
 from tracemalloc import Snapshot
 from turtle import pos
-from palm.positions.long_position import LongPosition
 from palm.positions.position import Position
-from palm.positions.short_position import ShortPosition
 import pytest
 
 import pandas as pd
@@ -35,66 +33,62 @@ def context(eod_data):
 
 def test_BuyOrder_LongPositionConstructed(context, buy_order):
 
-    position = LongPosition(context, buy_order)
+    position = Position.from_order(context, buy_order)
     assert position.side == Position.Side.LONG
     assert position.status == Position.Status.OPEN
     assert position.quantity == 1
     assert type(position.quantity) == int
     assert position.current_dollar_value == context.current_market_price("MSFT")
-    assert position.order == buy_order
     assert position.have_already_been_closed == False
 
 def test_LongPositionIncreased_QuantityIncreased(context, buy_order):
-    position = LongPosition(context, buy_order)
+    position = Position.from_order(context, buy_order)
 
     position.increase(1)
     assert position.quantity == 2
 
 def test_LongPositionDecreased_QuantityDecreased(context, buy_order):
 
-    position = LongPosition(context, buy_order)
+    position = Position.from_order(context, buy_order)
     position.decrease(1)
     assert position.quantity == 0
 
 def test_LongPositionDecreasedToZero_StatusSetToClosed(context, buy_order):
 
-    position = LongPosition(context, buy_order)
+    position = Position.from_order(context, buy_order)
     position.decrease(1)
     assert position.quantity == 0
-    assert position.status == position.Status.CLOSED
 
 def test_SellOrder_ShortPositionConstructed(context, sell_order):
 
-    position = ShortPosition(context, sell_order)
+    position = Position.from_order(context, sell_order)
     assert position.side == Position.Side.SHORT
     assert position.status == Position.Status.OPEN
-    assert position.quantity == 1
+    assert position.quantity == -1
     assert position.current_dollar_value == -1.0 * context.current_market_price("MSFT")
-    assert position.order == sell_order
     assert position.have_already_been_closed == False
+
+def test_ShortPositionIncreased_QuantityDecreased(context, sell_order):
+
+    position = Position.from_order(context, sell_order)
+    position.decrease(1)
+    assert position.quantity == -2
 
 def test_ShortPositionIncreased_QuantityIncreased(context, sell_order):
 
-    position = ShortPosition(context, sell_order)
+    position = Position.from_order(context, sell_order)
     position.increase(1)
-    assert position.quantity == 2
-
-def test_ShortPositionDecreased_QuantityDecreased(context, sell_order):
-
-    position = ShortPosition(context, sell_order)
-    position.decrease(1)
     assert position.quantity == 0
 
 def test_ShortPositionDecreasedToZero_StatusSetToClosed(context, sell_order):
 
-    position = ShortPosition(context, sell_order)
-    position.decrease(1)
+    position = Position.from_order(context, sell_order)
+    position.increase(1)
     assert position.quantity == 0
-    assert position.status == position.Status.CLOSED
 
 def test_PositionDecreased_SnapshotRemainsUnchanged(context, buy_order):
     
-    position = LongPosition(context, buy_order)
+    position = Position.from_order(context, buy_order)
     snapshot = position.state
     quantity = snapshot.quantity
 

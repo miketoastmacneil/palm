@@ -83,8 +83,7 @@ class ContextEOD(ContextObservable):
     def __init__(
         self,
         data_source: EquityEOD,
-        start_date: datetime = None,
-        start_index: int = None,
+        start_index: int = 0
     ):
         super(ContextEOD, self).__init__()
         self._data = data_source
@@ -93,19 +92,8 @@ class ContextEOD(ContextObservable):
         self._close = self._data["close"].to_numpy()
         self._dates = self._data.dates
 
-        self._current_date_index = 0
-        self._start_date_index = 0
-
-        ## TODO, this doesn't guard against the user choosing a
-        ## non-business day by accident
-        if start_date is not None:
-            self._current_date_index = np.where(self._dates.date == start_date.date())[
-                0
-            ][0]
-            self._start_date_index = self._current_date_index
-        if start_index is not None:
-            self._start_date_index = start_index
-            self._current_date_index = self._start_date_index
+        self._start_date_index = start_index
+        self._current_date_index = self._start_date_index
         self._time_in_market_day = TimeInMarketDay.Opening
 
         T, _ = data_source.shape

@@ -1,9 +1,7 @@
-from datetime import datetime
-import numpy as np
+from datetime import date
 import pandas as pd
 
 equity_eod_fields = ["open", "close", "high", "low", "volume"]
-
 
 class EquityEOD:
     """
@@ -106,7 +104,7 @@ class EquityEOD:
         else:
             self._return_type = new_value
 
-    def slice(self, from_date: datetime, to_date: datetime):
+    def slice(self, from_date: date, to_date: date):
         """
         Slices the data set from a start date up to,
         but not including, and end date.
