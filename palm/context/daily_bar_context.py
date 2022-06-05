@@ -8,9 +8,8 @@ from .context_observable import ContextObservable
 
 
 class TimeInMarketDay(Enum):
-    Opening = 1
-    Closing = 2
-
+    Open = 1
+    Close = 2
 
 class EODEvent:
     """
@@ -29,7 +28,7 @@ class EODEvent:
         pp = pprint.PrettyPrinter(indent=4)
         state = {
             "Time In Market Day": "Opening"
-            if self.time_in_market_day == TimeInMarketDay.Opening
+            if self.time_in_market_day == TimeInMarketDay.Open
             else "Closing",
             "Date Index Since Start": self.date_index_since_start,
             "Date": self.date,
@@ -94,7 +93,7 @@ class ContextEOD(ContextObservable):
 
         self._start_date_index = start_index
         self._current_date_index = self._start_date_index
-        self._time_in_market_day = TimeInMarketDay.Opening
+        self._time_in_market_day = TimeInMarketDay.Open
 
         T, _ = data_source.shape
         self._max_date_index = T - 1
@@ -104,17 +103,17 @@ class ContextEOD(ContextObservable):
     def current_market_price(self, symbol):
         t = self._current_date_index
         i = self._data.symbol_to_column_index[symbol]
-        if self._time_in_market_day == TimeInMarketDay.Opening:
+        if self._time_in_market_day == TimeInMarketDay.Open:
             return self._open[t, i]
-        elif self._time_in_market_day == TimeInMarketDay.Closing:
+        elif self._time_in_market_day == TimeInMarketDay.Close:
             return self._close[t, i]
 
     def current_market_prices(self):
 
         t = self._current_date_index
-        if self._time_in_market_day == TimeInMarketDay.Opening:
+        if self._time_in_market_day == TimeInMarketDay.Open:
             return self._open[t, :]
-        elif self._time_in_market_day == TimeInMarketDay.Closing:
+        elif self._time_in_market_day == TimeInMarketDay.Close:
             return self._close[t, :]
 
     def time_in_market_day(self):
@@ -145,10 +144,10 @@ class ContextEOD(ContextObservable):
         if not self.can_still_update():
             return
 
-        if self._time_in_market_day == TimeInMarketDay.Opening:
-            self._time_in_market_day = TimeInMarketDay.Closing
+        if self._time_in_market_day == TimeInMarketDay.Open:
+            self._time_in_market_day = TimeInMarketDay.Close
         else:
-            self._time_in_market_day = TimeInMarketDay.Opening
+            self._time_in_market_day = TimeInMarketDay.Open
             self._current_date_index = self._current_date_index + 1
 
         self.notify_observers()
@@ -158,7 +157,7 @@ class ContextEOD(ContextObservable):
         "end" of the iterator
         """
         at_the_last_day = self._current_date_index == self._max_date_index
-        at_closing_time = self._time_in_market_day == TimeInMarketDay.Closing
+        at_closing_time = self._time_in_market_day == TimeInMarketDay.Close
 
         its_closing_time_on_the_last_day = at_closing_time and at_the_last_day
 
@@ -192,7 +191,7 @@ class ContextEOD(ContextObservable):
         pp = pprint.PrettyPrinter(indent=4)
         state = {
             "Time In Market Day": "Opening"
-            if self._time_in_market_day == TimeInMarketDay.Opening
+            if self._time_in_market_day == TimeInMarketDay.Open
             else "Closing",
             "Current Time Index": self._current_date_index,
             "Current Date in Simulation": self.current_date(),

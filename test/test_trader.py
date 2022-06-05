@@ -47,7 +47,7 @@ def test_one_update_workflow(context):
             self.time_to_close = time_to_close
 
         def __call__(self):
-            is_closing = self.context.time_in_market_day() == TimeInMarketDay.Closing
+            is_closing = self.context.time_in_market_day() == TimeInMarketDay.Close
             is_next_day = self.context.current_date_index() == self.time_to_close
             return is_closing and is_next_day
 
@@ -63,7 +63,3 @@ def test_one_update_workflow(context):
     assert trade.status == Trade.Status.COMPLETE
     assert trader.broker.all_positions == {}
     assert len(trader.broker.all_orders) == 4
-
-    ## TODO: Need to ensure there was
-    ## 4 orders submitted.
-    ## They all are closed, and were all fullfilled.

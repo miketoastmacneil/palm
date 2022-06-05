@@ -1,8 +1,8 @@
 from functools import reduce
 from pandas.tseries.offsets import BDay
+import pandas as pd
 
-from ..context.daily_bar_context import TimeInMarketDay
-
+from ..context.daily_bar_context import EODEvent, TimeInMarketDay
 from ..data import EquityEOD
 from ..context import ContextEOD
 from ..trader import SimulatedTrader
@@ -67,9 +67,11 @@ class Strategy:
 
         return (True, "")
 
-    def trade_on_this_event(self, time_event):
+    def trade_on_this_event(self, time_event: EODEvent):
         if not hasattr(self, "time_filters"):
             return True 
+        if time_event.date_index_since_start < self.look_back:
+            return False
         else:
             keep_time_event = True
             for filter in self.time_filters:
@@ -107,7 +109,7 @@ class BacktestSubscribeSession:
 
         results = []
 
-        for time_event in filter(self._strategy.trade_on_this_event, self._context):
+        for time_event in self._context:
             if self._strategy.trade_on_this_event(time_event):    
                 windowed_historical_data = None
                 if time_event.date_index_since_start > 0:
@@ -144,3 +146,29 @@ class BacktestSubscribeSession:
             else "Historical data doesn't contain all symbols needed for strategy."
         )
         return (all_contained, error_message)
+    
+    def _results_to_dataframe(self, results):
+        
+        ## Positions
+        dict_of_results = {}
+        dict_of_results["Cash"] = []
+        dict_of_results["Portfolio Value"] = []
+        for symbol in self._symbols:
+            dict_of_results[symbol] = []
+
+        for result in results:
+            dict_of_results["cash"].append(result.cash_balance)
+            for symbol in self.symbols:
+                if symbol in result.positions.keys():
+                    dict_of_results[symbol].append(result.positions[symbol])
+                else:
+                    dict_of_results[symbol].append(0.0)
+                
+            dict_of_results["Portfolio Value"].append(result.portfolio_value)
+
+        return pd.DataFrame
+
+        
+
+                
+

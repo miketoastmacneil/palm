@@ -87,7 +87,6 @@ class EquityEOD:
         T, N = self.shape
         return T
 
-
     @property
     def return_type(self):
         return self._return_type
