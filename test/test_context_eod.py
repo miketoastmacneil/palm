@@ -1,11 +1,7 @@
-from sqlite3 import Time
-from palm import data
-from palm.context.daily_bar_context import ContextEOD, TimeInMarketDay
+import pandas as pd
 import pytest
 
-import pandas as pd
-from palm.data import EquityEOD, polygon_symbol_indexed_to_OHCLV_indexed
-
+import palm as pm
 
 @pytest.fixture
 def eod_data():
@@ -14,39 +10,34 @@ def eod_data():
     data["AAPL"] = pd.read_csv("sample_data/AAPL-Sample-Data.csv", index_col=0)
     data["MSFT"] = pd.read_csv("sample_data/MSFT-Sample-Data.csv", index_col=0)
 
-    return EquityEOD(polygon_symbol_indexed_to_OHCLV_indexed(data))
-
+    return pm.EquityEOD(pm.polygon_symbol_indexed_to_OHCLV_indexed(data))
 
 def test_init(eod_data):
-    context = ContextEOD(eod_data)
+    context = pm.ContextEOD(eod_data)
     assert context.current_date_index() == 0
-    assert context.time_in_market_day() == TimeInMarketDay.Open
+    assert context.time_in_market_day() == pm.TimeInMarketDay.Open
     assert context._max_date_index == 177
     assert context.can_still_update()
     assert context.observers == {}
 
-
 def test_InitWithStartDateOneDayAfterFirst_DateIndexIsOne(eod_data):
-    context = ContextEOD(eod_data)
+    context = pm.ContextEOD(eod_data)
     assert context.current_date_index() == 0
-
 
 def test_OneTimeStep_MovesFromOpenToClose(eod_data):
-
-    context = ContextEOD(eod_data)
+    context = pm.ContextEOD(eod_data)
     assert context.current_date_index() == 0
-    assert context.time_in_market_day() == TimeInMarketDay.Open
+    assert context.time_in_market_day() == pm.TimeInMarketDay.Open
     assert context.can_still_update()
 
     context.update()
 
     assert context.current_date_index() == 0
-    assert context.time_in_market_day() == TimeInMarketDay.Close
+    assert context.time_in_market_day() == pm.TimeInMarketDay.Close
     assert context.can_still_update()
 
-
 def test_AtFinalTimeStep_CanUpdateIsFalse(eod_data):
-    context = ContextEOD(eod_data)
+    context = pm.ContextEOD(eod_data)
     second_last_date = context._max_date_index - 1
     for i in range(second_last_date * 2):
         context.update()
@@ -56,10 +47,8 @@ def test_AtFinalTimeStep_CanUpdateIsFalse(eod_data):
     context.update()  ## Move to close
     assert context.can_still_update() == False
 
-
 def test_MarketPricesInFirstTwoSteps_GivesOpenThenClose(eod_data):
-
-    context = ContextEOD(eod_data)
+    context = pm.ContextEOD(eod_data)
 
     ## Prices taken from Open.
     assert context.current_market_price("AAPL") == 79.2975
@@ -71,10 +60,9 @@ def test_MarketPricesInFirstTwoSteps_GivesOpenThenClose(eod_data):
     assert context.current_market_price("AAPL") == 79.1425
     assert context.current_market_price("MSFT") == 166.5
 
-
 def test_FirstTenSteps_GiveCorrectMarketPricesForEach(eod_data):
 
-    context = ContextEOD(eod_data)
+    context = pm.ContextEOD(eod_data)
     first_aapl_open_prices = [
         79.2975,
         79.645,
@@ -132,7 +120,7 @@ def test_FirstTenSteps_GiveCorrectMarketPricesForEach(eod_data):
         else:
             assert event.date_index_since_start == i // 2
             if i % 2 == 0:
-                assert event.time_in_market_day == TimeInMarketDay.Open
+                assert event.time_in_market_day == pm.TimeInMarketDay.Open
                 assert (
                     context.current_market_price("AAPL")
                     == first_aapl_open_prices[i // 2]
@@ -142,7 +130,7 @@ def test_FirstTenSteps_GiveCorrectMarketPricesForEach(eod_data):
                     == first_msft_open_prices[i // 2]
                 )
             else:
-                assert event.time_in_market_day == TimeInMarketDay.Close
+                assert event.time_in_market_day == pm.TimeInMarketDay.Close
                 assert (
                     context.current_market_price("AAPL")
                     == first_aapl_close_prices[i // 2]

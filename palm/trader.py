@@ -1,37 +1,35 @@
-from turtle import position
+from typing import Set
 import numpy as np
 
-from ..context.context_observable import ContextObservable
-from ..broker.simulated_broker import SimulatedBroker
-from ..utils.generate_id import generate_hex_id
-from ..trades.trade import Trade
+from typing import Dict
 
-def weights_as_a_percentage_of_total_portfolio_value(broker: SimulatedBroker):
-    positions = broker.all_positions
-    portfolio_value = broker.portfolio_value()
+from .position import Position
+from .context_observable import ContextObservable
+from .simulated_broker import SimulatedBroker
+from .generate_id import generate_hex_id
+from .trade import Trade
+
+def weights_as_a_percentage_of_total_portfolio_value(positions: Dict[str, Position], portfolio_value: float, cash_balance: float):
 
     weights = {}
     for position_symbol in positions.keys():
         weights[position_symbol] = positions[position_symbol].current_dollar_value / portfolio_value
 
-    cash_value = broker.cash_account.balance
-    weights["Cash"] = cash_value
+    weights["Cash"] = cash_balance
 
     return weights
 
-
-class SimulatedTraderSnapshot:
-    def __init__(self, position_snapshot, portfolio_value, cash_balance):
-        self.positions = position_snapshot
-        self.portfolio_value = portfolio_value
-        self.cash_balance = cash_balance
-
 class SimulatedTrader:
     """
-    A layer above the broker to offer more sophisticated
+    A layer above the broker to offer more 
     and convenient methods for quant algorithms. Keeps track of
     "trades" which are a single unit intended to be
     """
+    class Snapshot:
+        def __init__(self, position_snapshot, portfolio_value, cash_balance):
+            self.positions = position_snapshot
+            self.portfolio_value = portfolio_value
+            self.cash_balance = cash_balance
 
     def __init__(self, context: ContextObservable, initial_deposit):
 

@@ -1,6 +1,5 @@
 import numpy as np
 
-
 def returns_from_series(prices: np.ndarray):
     """
     Takes a TxN price series and returns the percentage
@@ -12,14 +11,12 @@ def returns_from_series(prices: np.ndarray):
     else:
         return (prices[1:] - prices[:-1]) / prices[:-1]
 
-
 def cumulative_returns(returns: np.ndarray):
     """
     Takes an TxN returns series and returns
     the cumulative returns
     """
     return np.cumprod(returns + 1, axis=0)
-
 
 def autocovariance(x: np.ndarray, k=0):
     T = x.shape[0]

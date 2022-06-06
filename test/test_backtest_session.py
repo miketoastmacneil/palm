@@ -1,12 +1,7 @@
-from palm.backtestsession import BacktestSubscribeSession
-from palm.backtestsession.backtestsession import Strategy
-from palm.data.equity_eod import EquityEOD
+import pandas as pd
 import pytest
 
-import pandas as pd
-
-from palm.data import polygon_symbol_indexed_to_OHCLV_indexed
-
+import palm as pm
 
 @pytest.fixture
 def eod_data():
@@ -15,5 +10,5 @@ def eod_data():
     data["AAPL"] = pd.read_csv("sample_data/AAPL-Sample-Data.csv", index_col=0)
     data["MSFT"] = pd.read_csv("sample_data/MSFT-Sample-Data.csv", index_col=0)
 
-    return EquityEOD(polygon_symbol_indexed_to_OHCLV_indexed(data))
+    return pm.EquityEOD(pm.polygon_symbol_indexed_to_OHCLV_indexed(data))
 

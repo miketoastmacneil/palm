@@ -1,9 +1,7 @@
 from datetime import datetime, timedelta
-import json
 from tqdm import tqdm
 import os
 
-import numpy as np
 import pandas as pd
 
 from polygon import RESTClient

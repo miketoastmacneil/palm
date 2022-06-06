@@ -1,13 +1,11 @@
 from enum import Enum
 import pprint
 
-from palm.utils.generate_id import generate_hex_id
-
+from .generate_id import generate_hex_id
 
 class MarketOrderType(Enum):
     BUY = 1
     SELL = 2
-
 
 class MarketOrderStatus(Enum):
     NOT_SUBMITTED = 3
@@ -15,7 +13,7 @@ class MarketOrderStatus(Enum):
     CLOSED = 2
     FAILED = 5
 
-
+## TODO: This only handles integer quantities
 class MarketOrder:
     @staticmethod
     def Buy(symbol, quantity):

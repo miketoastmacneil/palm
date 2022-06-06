@@ -1,7 +1,7 @@
-from ..positions import Position
+from .position import Position
 from .cash_account import CashAccount, DepositResult, WithdrawalResult
-from ..orders import MarketOrder, MarketOrderType
-from ..context import ContextEOD
+from .market_order import MarketOrder, MarketOrderType
+from .daily_bar_context import ContextEOD
 
 class SimulatedBroker:
     def __init__(self, context: ContextEOD, initial_deposit: float, margin=2.0):

@@ -1,16 +1,13 @@
 from enum import Enum
 import pprint
 
-
 class WithdrawalResult(Enum):
     APPROVED = 1
     DECLINED = 2
 
-
 class DepositResult(Enum):
     CONFIRMED = 1
     DECLINED = 2
-
 
 class WithdrawalResponse:
     class DeclinedReason(Enum):
@@ -21,7 +18,6 @@ class WithdrawalResponse:
         self.result = result
         self.reason = reason
 
-
 class DepositResponse:
     class DeclinedReason(Enum):
         NEGATIVE_AMOUNT_DEPOSITED = 1
@@ -30,11 +26,9 @@ class DepositResponse:
         self.result = result
         self.reason = reason
 
-
 class Transaction(Enum):
     WITHDRAWAL = 1
     DEPOSIT = 2
-
 
 class TransactionRecord:
     def __init__(

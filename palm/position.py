@@ -1,13 +1,9 @@
-from abc import abstractmethod
 from enum import Enum
 import pprint
-from tracemalloc import Snapshot
 
-from ..orders.market_order import MarketOrder, MarketOrderType
-
-from ..context.daily_bar_context import ContextEOD
-from ..utils.generate_id import generate_hex_id
-
+from .market_order import MarketOrder, MarketOrderType
+from .daily_bar_context import ContextEOD
+from .generate_id import generate_hex_id
 
 class Position:
     """
@@ -45,6 +41,12 @@ class Position:
         self.symbol = symbol
         self.quantity = quantity 
 
+    def increase(self, amount):
+        self.quantity += int(amount)
+
+    def decrease(self, amount):
+        self.quantity -= amount
+
     def set_to_closed(self):
         if self.have_already_been_closed:
             return
@@ -74,12 +76,6 @@ class Position:
 
     def __hash__(self) -> int:
         return hash(str(self.id))
-
-    def increase(self, amount):
-        self.quantity += int(amount)
-
-    def decrease(self, amount):
-        self.quantity -= amount
 
     def __repr__(self) -> str:
         pp = pprint.PrettyPrinter(indent=4)

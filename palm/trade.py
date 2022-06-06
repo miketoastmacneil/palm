@@ -2,10 +2,8 @@ from enum import Enum
 import pprint
 from typing import Callable, Dict
 
-from palm.utils.generate_id import generate_hex_id
-
-from ..orders.market_order import MarketOrder
-
+from .generate_id import generate_hex_id
+from .market_order import MarketOrder
 
 class Trade:
     class Status(Enum):

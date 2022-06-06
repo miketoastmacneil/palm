@@ -3,20 +3,14 @@ from enum import Enum
 import numpy as np
 import pprint
 
-from ..data import EquityEOD
+from .equity_eod import EquityEOD
 from .context_observable import ContextObservable
-
 
 class TimeInMarketDay(Enum):
     Open = 1
     Close = 2
 
 class EODEvent:
-    """
-    End of Day time events for simulation, provides the
-    use with what date it is and whether it is opening or closing.
-    In backtesting "date_index_since_start" is provided for convenience.
-    """
 
     def __init__(self, date, time_in_market_day, date_index_since_start):
 
@@ -35,6 +29,11 @@ class EODEvent:
         }
         return pp.pformat(state)
 
+class EODEventGenerator:
+
+    def __init__(self, list_of_dates):
+        self.dates = list_of_dates
+    
 
 class ContextEOD(ContextObservable):
     """
